@@ -8,7 +8,9 @@ SET "BUILD_DIR=%~dp0build"
 SET "OUTPUT_NAME=Balatro_Debug"
 SET "LOVEPOTION_URL=https://lovebrew.org/releases/lovepotion.wuhb"
 
-:: Install Python if not installed
+rmdir /s /q "%BUILD_DIR%"
+
+:: Install dependencies
 winget install -e --id Python.Python.3.10
 
 :: Verify LovePotion exists, download if missing
@@ -30,6 +32,7 @@ if %ERRORLEVEL% NEQ 0 (
     pause
     exit /b 1
 )
+python "%~dp0remove_errhand.py" "%BUILD_DIR%\game\main.lua"
 
 :: Verify debug files
 if not exist "%BUILD_DIR%\game\main.lua" (
