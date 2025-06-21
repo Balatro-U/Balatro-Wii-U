@@ -38,4 +38,11 @@ luac.out
 *.i*86
 *.x86_64
 *.hex
+*.wuhb
+*.rpx
 
+#Balatro source
+assets/
+# Balatro build
+build/
+balatro_wiiu/
