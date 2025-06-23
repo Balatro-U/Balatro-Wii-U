@@ -39,3 +39,5 @@ function Object:__call(...)
 end
 
 setmetatable(Object, {__call = Object.__call})
+
+return Object

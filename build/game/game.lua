@@ -1,3 +1,40 @@
+local Object = require("engine/object")
+Game = Object:extend()
+
+function love.load()
+    -- ... existující kód ...
+    
+    -- Ujisti se, že G je správně vytvořeno
+    if not G or not G.update then
+        print("CHYBA: G není správně inicializováno, znovu vytvářím...")
+        G = Game()
+        G:start_up()
+    
+    print("Po load: G type:", type(G), "G.update:", G.update and "exists" or "nil")
+end
+
+-- PŘIDEJ TUTO FUNKCI NA ZAČÁTEK SOUBORU PŘED Game:start_up()
+
+function get_compressed(filename)
+    -- Pro Wii U - zjednodušená verze
+    if love.filesystem.getInfo(filename) then
+        local data = love.filesystem.read(filename)
+        return data
+    end
+    return nil
+end
+
+function STR_UNPACK(data)
+    -- Pro Wii U - zjednodušená verze
+    if data then
+        local func = loadstring("return " .. data)
+        if func then
+            return func()
+        end
+    end
+    return {}
+end
+
 function wiiu_log(msg)
     if love.filesystem then
         love.filesystem.append("log.txt", os.date("[%H:%M:%S] ") .. tostring(msg) .. "\n")
@@ -9,8 +46,6 @@ function love.errorhandler(msg)
     wiiu_log("ERROR: " .. trace)
     return false
 end
-
-G = G or {}
 
 G.FUNCS = G.FUNCS or {}
 G.FUNCS.apply_window_changes = G.FUNCS.apply_window_changes or function() end
@@ -28,16 +63,63 @@ G.I.POPUP = G.I.POPUP or {}
 
 --Class Methods
 function Game:init()
+    print("Game:init() začíná...")
+    
+    -- NEPREPISUJ G, ale zkopíruj jeho obsah do self
+    for k, v in pairs(G) do
+        self[k] = v
+    end
+    
+    -- Inicializuj základní struktury pokud neexistují
+    self.SETTINGS = self.SETTINGS or {}
+    self.SETTINGS.language = self.SETTINGS.language or 'en-us'
+    
+    -- INICIALIZUJ GRAPHICS NASTAVENÍ
+    self.SETTINGS.GRAPHICS = self.SETTINGS.GRAPHICS or {}
+    self.SETTINGS.GRAPHICS.texture_scaling = self.SETTINGS.GRAPHICS.texture_scaling or 2
+    
+    -- PŘIDEJ INICIALIZACI C pokud neexistuje
+    self.C = self.C or {}
+    
+    -- INICIALIZUJ ARGS
+    self.ARGS = self.ARGS or {}
+    set_profile_progress()
+    boot_timer('prep stage', 'splash prep',1)
+    self:splash_screen()
+    boot_timer('splash prep', 'end',1)
+    -- Pak nastav G na self
     G = self
-
-    self:set_globals()
+    print("G nastaveno na self, type(G):", type(G))
+    print("Game:init() dokončeno!")
 end
-
 function Game:start_up()
+    -- Inicializuj C pokud neexistuje
+    self.C = self.C or {}
+    self.C.SUITS = self.C.SUITS or {}
+    
+    -- PŘIDEJ INICIALIZACI BAREV PŘED JEJICH POUŽITÍM
+    if not self.C.SO_1 then
+        self.C.SO_1 = {
+            Hearts = {1, 0, 0, 1},    -- červená
+            Diamonds = {1, 0, 0, 1},  -- červená
+            Spades = {0, 0, 0, 1},    -- černá
+            Clubs = {0, 0, 0, 1}      -- černá
+        }
+    end
+    
+    if not self.C.SO_2 then
+        self.C.SO_2 = {
+            Hearts = {0, 0, 1, 1},    -- modrá (colorblind friendly)
+            Diamonds = {1, 0.5, 0, 1}, -- oranžová (colorblind friendly)
+            Spades = {0, 0, 0, 1},    -- černá
+            Clubs = {0, 0, 0, 1}      -- černá
+        }
+    end
+    
     --Load the settings file
     G.CANV_SCALE = G.CANV_SCALE or 1.0
     G.TILESCALE = G.TILESCALE or 1.0
-    G.TILESIZE = G.TILESIZE or 64  -- Nebo jiná rozumná hodnota
+    G.TILESIZE = G.TILESIZE or 64
     local settings = get_compressed('settings.jkr')
     local settings_ver = nil
     if settings then 
@@ -98,10 +180,68 @@ function Game:start_up()
             local sound_code = string.sub(filename, 1, -5)
             SOURCES[sound_code] = {}
         end
+        
+    end
+end
+function Game:set_language()
+    if not self.LANGUAGES then 
+        if not (love.filesystem.read('localization/'..G.SETTINGS.language..'.lua')) or G.F_ENGLISH_ONLY then
+            ------------------------------------------
+            --SET LANGUAGE FOR FIRST TIME STARTUP HERE
+
+            ------------------------------------------
+
+            G.SETTINGS.language = 'en-us'
+        end
+        -------------------------------------------------------
+        --IF LANGUAGE NEEDS TO BE SET ON EVERY REBOOT, SET HERE
+
+        -------------------------------------------------------
+
+        self.LANGUAGES = {
+            ['en-us'] = {font = 1, label = "English", key = 'en-us', button = "Language Feedback", warning = {'This language is still in Beta. To help us','improve it, please click on the feedback button.', 'Click again to confirm'}},
+            ['de'] = {font = 1, label = "Deutsch", key = 'de', beta = nil, button = "Feedback zur Übersetzung", warning = {'Diese Übersetzung ist noch im Beta-Stadium. Willst du uns helfen,','sie zu verbessern? Dann klicke bitte auf die Feedback-Taste.', "Zum Bestätigen erneut klicken"}},
+            ['es_419'] = {font = 1, label = "Español (México)", key = 'es_419', beta = nil, button = "Sugerencias de idioma", warning = {'Este idioma todavía está en Beta. Pulsa el botón','de sugerencias para ayudarnos a mejorarlo.', "Haz clic de nuevo para confirmar"}},
+            ['es_ES'] = {font = 1, label = "Español (España)", key = 'es_ES', beta = nil, button = "Sugerencias de idioma", warning = {'Este idioma todavía está en Beta. Pulsa el botón','de sugerencias para ayudarnos a mejorarlo.', "Haz clic de nuevo para confirmar"}},
+            ['fr'] = {font = 1, label = "Français", key = 'fr', beta = nil, button = "Partager votre avis", warning = {'La traduction française est encore en version bêta. ','Veuillez cliquer sur le bouton pour nous donner votre avis.', "Cliquez à nouveau pour confirmer"}},
+            ['id'] = {font = 1, label = "Bahasa Indonesia", key = 'id', beta = true, button = "Umpan Balik Bahasa", warning = {'Bahasa ini masih dalam tahap Beta. Untuk membantu','kami meningkatkannya, silakan klik tombol umpan balik.', "Klik lagi untuk mengonfirmasi"}},
+            ['it'] = {font = 1, label = "Italiano", key = 'it', beta = nil, button = "Feedback traduzione", warning = {'Questa traduzione è ancora in Beta. Per','aiutarci a migliorarla, clicca il tasto feedback', "Fai clic di nuovo per confermare"}},
+            ['ja'] = {font = 5, label = "日本語", key = 'ja', beta = nil, button = "提案する", warning = {'この翻訳は現在ベータ版です。提案があった場合、','ボタンをクリックしてください。', "もう一度クリックして確認"}},
+            ['ko'] = {font = 4, label = "한국어", key = 'ko', beta = true, button = "번역 피드백", warning = {'이 언어는 아직 베타 단계에 있습니다. ','번역을 도와주시려면 피드백 버튼을 눌러주세요.', "다시 클릭해서 확인하세요"}},
+            ['nl'] = {font = 1, label = "Nederlands", key = 'nl', beta = nil, button = "Taal suggesties", warning = {'Deze taal is nog in de Beta fase. Help ons het te ','verbeteren door op de suggestie knop te klikken.', "Klik opnieuw om te bevestigen"}},
+            ['pl'] = {font = 1, label = "Polski", key = 'pl', beta = nil, button = "Wyślij uwagi do tłumaczenia", warning = {'Polska wersja językowa jest w fazie Beta. By pomóc nam poprawić',' jakość tłumaczenia, kliknij przycisk i podziel się swoją opinią i uwagami.', "Kliknij ponownie, aby potwierdzić"}},
+            ['pt_BR'] = {font = 1, label = "Português", key = 'pt_BR', beta = nil, button = "Feedback de Tradução", warning = {'Esta tradução ainda está em Beta. Se quiser nos ajudar','a melhorá-la, clique no botão de feedback por favor', "Clique novamente para confirmar"}},
+            ['ru'] = {font = 6, label = "Русский", key = 'ru', beta = true, button = "Отзыв о языке", warning = {'Этот язык все еще находится в Бета-версии. Чтобы помочь','нам его улучшить, пожалуйста, нажмите на кнопку обратной связи.', "Щелкните снова, чтобы подтвердить"}},
+            ['zh_CN'] = {font = 2, label = "简体中文", key = 'zh_CN', beta = nil, button = "意见反馈", warning = {'这个语言目前尚为Beta版本。 请帮助我们改善翻译品质，','点击”意见反馈” 来提供你的意见。', "再次点击确认"}},
+            ['zh_TW'] = {font = 3, label = "繁體中文", key = 'zh_TW', beta = nil, button = "意見回饋", warning = {'這個語言目前尚為Beta版本。請幫助我們改善翻譯品質，','點擊”意見回饋” 來提供你的意見。', "再按一下即可確認"}},
+            ['all1'] = {font = 8, label = "English", key = 'all', omit = true},
+            ['all2'] = {font = 9, label = "English", key = 'all', omit = true},
+        }
+        self.LANG = self.LANGUAGES[self.SETTINGS.language] or self.LANGUAGES['en-us']
+        --if G.F_ENGLISH_ONLY then
+        --    self.LANGUAGES = {
+        --        ['en-us'] = self.LANGUAGES['en-us']
+        --    }
+        local localization = love.filesystem.getInfo('localization/'..G.SETTINGS.language..'.lua')
+        if localization ~= nil then
+            self.localization = assert(loadstring(love.filesystem.read('localization/'..G.SETTINGS.language..'.lua')))()
+            if init_localization then
+                init_localization()
+            end
+        else
+            -- Fallback pro Wii U - základní lokalizace
+            self.localization = {}
+            G.localization = self.localization  -- Ujisti se, že G.localization existuje
+            wiiu_log("Lokalizace nenalezena, používám fallback")
+        end
+        
+        -- Ujisti se, že G.localization je nastaveno
+        G.localization = G.localization or self.localization or {}
     end
 
-function Game:init_window(reset)
-  --[[
+
+--[[ function Game:init_window(reset)
+
   --Initialize the window
     self.ROOM_PADDING_H= 0.7
     self.ROOM_PADDING_W = 1
@@ -119,8 +259,8 @@ function Game:init_window(reset)
     G.SETTINGS.QUEUED_CHANGE.screenmode = G.SETTINGS.WINDOW.screenmode
     
     G.FUNCS.apply_window_changes(true)
-    --]]
-end
+    
+end --]]
     self.SETTINGS.language = self.SETTINGS.language or 'en-us'
     boot_timer('settings', 'window init', 0.2)
     self:init_window()
@@ -230,9 +370,8 @@ end
         {FONT = nil}, -- index 9
     }
 
-    self:set_language()
     self:init_item_prototypes()
-
+    self:set_language()
     self:init_item_prototypes()
     boot_timer('protos', 'shared sprites',0.9)
 
@@ -259,6 +398,7 @@ self.CURSOR.states.collide.can = false
     boot_timer('prep stage', 'splash prep',1)
     self:splash_screen()
     boot_timer('splash prep', 'end',1)
+end
 end
 
 function Game:init_item_prototypes()
@@ -802,7 +942,6 @@ function Game:init_item_prototypes()
                 v.alerted = true
             elseif v.discovered then
                 v.alerted = false
-            end
         end
     end
 
@@ -970,66 +1109,10 @@ function Game:load_profile(_profile)
 
     recursive_init(temp_profile, G.PROFILES[G.SETTINGS.profile])
 end
-
+--[[
 self:load_profile(G.SETTINGS.profile or 1)
 self:set_language()
 self:init_item_prototypes()
-
-function Game:set_language()
-    if not self.LANGUAGES then 
-        if not (love.filesystem.read('localization/'..G.SETTINGS.language..'.lua')) or G.F_ENGLISH_ONLY then
-            ------------------------------------------
-            --SET LANGUAGE FOR FIRST TIME STARTUP HERE
-
-            ------------------------------------------
-
-            G.SETTINGS.language = 'en-us'
-        end
-        -------------------------------------------------------
-        --IF LANGUAGE NEEDS TO BE SET ON EVERY REBOOT, SET HERE
-
-        -------------------------------------------------------
-
-        self.LANGUAGES = {
-            ['en-us'] = {font = 1, label = "English", key = 'en-us', button = "Language Feedback", warning = {'This language is still in Beta. To help us','improve it, please click on the feedback button.', 'Click again to confirm'}},
-            ['de'] = {font = 1, label = "Deutsch", key = 'de', beta = nil, button = "Feedback zur Übersetzung", warning = {'Diese Übersetzung ist noch im Beta-Stadium. Willst du uns helfen,','sie zu verbessern? Dann klicke bitte auf die Feedback-Taste.', "Zum Bestätigen erneut klicken"}},
-            ['es_419'] = {font = 1, label = "Español (México)", key = 'es_419', beta = nil, button = "Sugerencias de idioma", warning = {'Este idioma todavía está en Beta. Pulsa el botón','de sugerencias para ayudarnos a mejorarlo.', "Haz clic de nuevo para confirmar"}},
-            ['es_ES'] = {font = 1, label = "Español (España)", key = 'es_ES', beta = nil, button = "Sugerencias de idioma", warning = {'Este idioma todavía está en Beta. Pulsa el botón','de sugerencias para ayudarnos a mejorarlo.', "Haz clic de nuevo para confirmar"}},
-            ['fr'] = {font = 1, label = "Français", key = 'fr', beta = nil, button = "Partager votre avis", warning = {'La traduction française est encore en version bêta. ','Veuillez cliquer sur le bouton pour nous donner votre avis.', "Cliquez à nouveau pour confirmer"}},
-            ['id'] = {font = 1, label = "Bahasa Indonesia", key = 'id', beta = true, button = "Umpan Balik Bahasa", warning = {'Bahasa ini masih dalam tahap Beta. Untuk membantu','kami meningkatkannya, silakan klik tombol umpan balik.', "Klik lagi untuk mengonfirmasi"}},
-            ['it'] = {font = 1, label = "Italiano", key = 'it', beta = nil, button = "Feedback traduzione", warning = {'Questa traduzione è ancora in Beta. Per','aiutarci a migliorarla, clicca il tasto feedback', "Fai clic di nuovo per confermare"}},
-            ['ja'] = {font = 5, label = "日本語", key = 'ja', beta = nil, button = "提案する", warning = {'この翻訳は現在ベータ版です。提案があった場合、','ボタンをクリックしてください。', "もう一度クリックして確認"}},
-            ['ko'] = {font = 4, label = "한국어", key = 'ko', beta = true, button = "번역 피드백", warning = {'이 언어는 아직 베타 단계에 있습니다. ','번역을 도와주시려면 피드백 버튼을 눌러주세요.', "다시 클릭해서 확인하세요"}},
-            ['nl'] = {font = 1, label = "Nederlands", key = 'nl', beta = nil, button = "Taal suggesties", warning = {'Deze taal is nog in de Beta fase. Help ons het te ','verbeteren door op de suggestie knop te klikken.', "Klik opnieuw om te bevestigen"}},
-            ['pl'] = {font = 1, label = "Polski", key = 'pl', beta = nil, button = "Wyślij uwagi do tłumaczenia", warning = {'Polska wersja językowa jest w fazie Beta. By pomóc nam poprawić',' jakość tłumaczenia, kliknij przycisk i podziel się swoją opinią i uwagami.', "Kliknij ponownie, aby potwierdzić"}},
-            ['pt_BR'] = {font = 1, label = "Português", key = 'pt_BR', beta = nil, button = "Feedback de Tradução", warning = {'Esta tradução ainda está em Beta. Se quiser nos ajudar','a melhorá-la, clique no botão de feedback por favor', "Clique novamente para confirmar"}},
-            ['ru'] = {font = 6, label = "Русский", key = 'ru', beta = true, button = "Отзыв о языке", warning = {'Этот язык все еще находится в Бета-версии. Чтобы помочь','нам его улучшить, пожалуйста, нажмите на кнопку обратной связи.', "Щелкните снова, чтобы подтвердить"}},
-            ['zh_CN'] = {font = 2, label = "简体中文", key = 'zh_CN', beta = nil, button = "意见反馈", warning = {'这个语言目前尚为Beta版本。 请帮助我们改善翻译品质，','点击”意见反馈” 来提供你的意见。', "再次点击确认"}},
-            ['zh_TW'] = {font = 3, label = "繁體中文", key = 'zh_TW', beta = nil, button = "意見回饋", warning = {'這個語言目前尚為Beta版本。請幫助我們改善翻譯品質，','點擊”意見回饋” 來提供你的意見。', "再按一下即可確認"}},
-            ['all1'] = {font = 8, label = "English", key = 'all', omit = true},
-            ['all2'] = {font = 9, label = "English", key = 'all', omit = true},
-        }
-        self.LANG = self.LANGUAGES[self.SETTINGS.language] or self.LANGUAGES['en-us']
-        --if G.F_ENGLISH_ONLY then
-        --    self.LANGUAGES = {
-        --        ['en-us'] = self.LANGUAGES['en-us']
-        --    }
-        local localization = love.filesystem.getInfo('localization/'..G.SETTINGS.language..'.lua')
-        if localization ~= nil then
-            self.localization = assert(loadstring(love.filesystem.read('localization/'..G.SETTINGS.language..'.lua')))()
-            if init_localization then
-                init_localization()
-            end
-        else
-            -- Fallback pro Wii U - základní lokalizace
-            self.localization = {}
-            G.localization = self.localization  -- Ujisti se, že G.localization existuje
-            wiiu_log("Lokalizace nenalezena, používám fallback")
-        end
-        
-        -- Ujisti se, že G.localization je nastaveno
-        G.localization = G.localization or self.localization or {}
-    end
         
 --load the font and set filter
 for _, v in ipairs(self.FONTS) do
@@ -1049,8 +1132,8 @@ end
       self.localization = assert(loadstring(love.filesystem.read('localization/'..G.SETTINGS.language..'.lua')))()
       init_localization()
     end
+    --]]
 end
-
 function Game:set_render_settings()
     self.SETTINGS.GRAPHICS.texture_scaling = self.SETTINGS.GRAPHICS.texture_scaling or 2
 
@@ -2712,7 +2795,6 @@ function Game:draw()
     timer_checkpoint('start->canvas', 'draw')
     --love.graphics.setCanvas{self.CANVAS}
     love.graphics.push()
-    end
 
     if G.debug_splash_size_toggle then 
         for k, v in pairs(self.I.CARDAREA) do
@@ -3564,4 +3646,5 @@ function Game:update_game_over(dt)
 end
 
 function Game:update_menu(dt)
+end
 end

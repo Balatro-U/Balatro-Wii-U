@@ -83,12 +83,13 @@ function timer_checkpoint(label, type, reset)
   cp.checkpoint_list[cp.checkpoints].average = av 
 end
 
-function boot_timer(_label, _next, progress)
+function boot_timer(from, to, progress)
   progress = progress or 0
   local realw, realh = 1280, 720 -- wii u
 
   if not G.LOADING_FONT then
-      G.LOADING_FONT = love.graphics.newFont("standard", 20) --wii u font
+      G.LOADING_FONT = love.graphics.newFont(20)  -- Systémový font
+      wiiu_log("Používám systémový font pro boot_timer")
   end
   love.graphics.setFont(G.LOADING_FONT)
 
@@ -105,6 +106,8 @@ function boot_timer(_label, _next, progress)
   love.graphics.pop()
   love.graphics.present()
 
+  -- INICIALIZUJ G.ARGS PŘED JEHO POUŽITÍM
+  G.ARGS = G.ARGS or {}
   G.ARGS.bt = G.ARGS.bt or love.timer.getTime()
   G.ARGS.bt = love.timer.getTime()
 end
@@ -1507,6 +1510,7 @@ function save_run()
 end
 
 function remove_save()
+ 
   love.filesystem.remove(G.SETTINGS.profile..'/save.jkr')
   G.SAVED_GAME = nil
   G.FILE_HANDLER.run = nil

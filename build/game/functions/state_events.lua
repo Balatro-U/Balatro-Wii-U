@@ -1,3 +1,6 @@
+G = G or {}
+G.FUNCS = G.FUNCS or {}
+
 function win_game()
     if not G.GAME.seeded and not G.GAME.challenge then
         set_joker_win()
@@ -1081,7 +1084,7 @@ G.FUNCS.evaluate_play = function(e)
                 for k, v in ipairs(scoring_hand) do v.ability.perma_debuff = true end
             end
         return true end)
-      }))
+      ))
 
   end
   

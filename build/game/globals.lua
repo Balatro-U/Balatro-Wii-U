@@ -65,7 +65,24 @@ function Game:set_globals()
     self.F_HIDE_BG = true
 
     -- Nastav systémový font pro veškerý text ve hře (pro Wii U/LovePotion)
-    self.SYSTEM_FONT = love.graphics.newFont("standard", 20)
+    local font = nil
+
+    -- Zkus načíst "standard"
+    local success, result = pcall(love.graphics.newFont, "standard", 20)
+    if success and result then
+        font = result
+        wiiu_log("Font 'standard' načten")
+    else
+        wiiu_log("Font 'standard' nenalezen, zkouším systémový font")
+        local ok, fallback = pcall(love.graphics.newFont, 20)
+        if ok and fallback then
+            font = fallback
+            wiiu_log("Používám systémový font")
+        else
+            wiiu_log("Chyba: Nepodařilo se načíst žádný font!")
+        end
+    end
+    G.LOADING_FONT = font
 
     --||||||||||||||||||||||||||||||
     --             Time
@@ -448,4 +465,8 @@ function Game:set_globals()
 end
 
 G = Game()
-love.graphics.setFont(G.SYSTEM_FONT)
+if G.LOADING_FONT then
+    love.graphics.setFont(G.LOADING_FONT)
+else
+    wiiu_log("Chyba: G.LOADING_FONT je nil, nelze nastavit font!")
+end

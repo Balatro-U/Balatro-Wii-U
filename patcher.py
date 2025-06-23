@@ -1,309 +1,267 @@
 import os
 import re
-import shutil
-import sys
 from pathlib import Path
+import sys
+import locale
 
-# Fix pro Windows console encoding
-if sys.platform == "win32":
-    try:
-        import codecs
-        sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
-        sys.stderr = codecs.getwriter("utf-8")(sys.stderr.detach())
-    except:
-        # Fallback - používej pouze ASCII znaky
-        pass
+sys.stdout.reconfigure(encoding='utf-8')
 
-class BalatroWiiUPatcher:
-    def __init__(self, project_dir=None):
-        self.project_dir = Path(project_dir) if project_dir else Path(__file__).parent
-        self.game_lua_path = self.project_dir / "build" / "game" / "game.lua"
-        self.backup_path = self.project_dir / "build" / "game" / "game.lua.backup"
+def create_consolidated_balatro():
+    """
+    Spojí všechny Lua soubory Balatro projektu do jednoho main.lua souboru
+    """
+    
+    # Definice struktury souborů v pořadí pro správné načítání
+    file_order = [
+        # Core engine files
+        "engine/object.lua",
+        "engine/node.lua", 
+        "engine/moveable.lua",
+        "engine/sprite.lua",
+        "engine/animatedsprite.lua",
+        "engine/string_packer.lua",
+        "engine/controller.lua",
+        "engine/event.lua",
+        "engine/ui.lua",
+        "engine/particles.lua",
+        "engine/text.lua",
         
-    def log(self, message):
-        print(f"[PATCHER] {message}")
+        # Bit operations
+        "bit.lua",
         
-    def create_backup(self):
-        """Vytvoří zálohu původního souboru"""
-        if self.game_lua_path.exists() and not self.backup_path.exists():
-            shutil.copy2(self.game_lua_path, self.backup_path)
-            self.log(f"Záloha vytvořena: {self.backup_path}")
+        # Game systems
+        "back.lua",
+        "tag.lua", 
+        "blind.lua",
+        "card.lua",
+        "card_character.lua",
+        "cardarea.lua",
         
-    def restore_backup(self):
-        """Obnoví původní soubor ze zálohy"""
-        if self.backup_path.exists():
-            shutil.copy2(self.backup_path, self.game_lua_path)
-            self.log("Soubor obnoven ze zálohy")
-            return True
-        return False
+        # Functions
+        "functions/misc_functions.lua",
+        "functions/UI_definitions.lua",
+        "functions/state_events.lua", 
+        "functions/common_events.lua",
+        "functions/button_callbacks.lua",
+        "functions/test_functions.lua",
         
-    def read_file(self):
-        """Načte obsah game.lua"""
-        try:
-            with open(self.game_lua_path, 'r', encoding='utf-8') as f:
-                return f.read()
-        except Exception as e:
-            self.log(f"Chyba při čtení souboru: {e}")
-            return None
-            
-    def write_file(self, content):
-        """Zapíše obsah do game.lua"""
-        try:
-            with open(self.game_lua_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-            return True
-        except Exception as e:
-            self.log(f"Chyba při zápisu souboru: {e}")
-            return False
-            
-    def patch_cursor_initialization(self, content):
-        """Oprava CURSOR inicializace"""
-        self.log("Aplikuji patch pro CURSOR inicializaci...")
+        # Core game
+        "globals.lua",
+        "game.lua",
+        "challenges.lua",
         
-        # Najdi řádek s CURSOR inicializací
-        pattern = r'self\.CURSOR = Sprite\(0,0,0\.3, 0\.3, self\.ASSET_ATLAS\[\'gamepad_ui\'\], \{x = 18, y = 0\}\)'
-        
-        replacement = '''if self.ASSET_ATLAS and self.ASSET_ATLAS['gamepad_ui'] then
-        self.CURSOR = Sprite(0,0,0.3, 0.3, self.ASSET_ATLAS['gamepad_ui'], {x = 18, y = 0})
-    else
-        -- Fallback cursor pro LovePotion
-        self.CURSOR = {
-            T = {x = 0, y = 0, w = 0.3, h = 0.3},
-            states = {collide = {can = false}},
-            translate_container = function(self) end,
-            draw = function(self) end
-        }
-    end'''
-        
-        if re.search(pattern, content):
-            content = re.sub(pattern, replacement, content)
-            self.log("OK CURSOR inicializace opravena")
-        else:
-            self.log("! CURSOR inicializace nenalezena")
-            
-        return content
-        
-    def patch_shared_sprites(self, content):
-        """Oprava sdílených spritů - zajistí že jsou zakomentované"""
-        self.log("Aplikuji patch pro sdílené sprity...")
-        
-        # Jednodušší přístup - najdi a zakomentuj blok shared spritů
-        if 'self.shared_debuff = Sprite(' in content and '--self.shared_debuff = Sprite(' not in content:
-            # Nahraď všechny shared sprite inicializace komentáři
-            patterns = [
-                r'(\s+)(self\.shared_debuff = Sprite\([^)]+\))',
-                r'(\s+)(self\.shared_soul = Sprite\([^)]+\))',
-                r'(\s+)(self\.shared_undiscovered_joker = Sprite\([^)]+\))',
-                r'(\s+)(self\.shared_undiscovered_tarot = Sprite\([^)]+\))',
-                r'(\s+)(self\.shared_sticker_eternal = Sprite\([^)]+\))',
-                r'(\s+)(self\.shared_sticker_perishable = Sprite\([^)]+\))',
-                r'(\s+)(self\.shared_sticker_rental = Sprite\([^)]+\))',
-            ]
-            
-            for pattern in patterns:
-                content = re.sub(pattern, r'\1--\2', content)
-            
-            # Zakomentuj shared_stickers tabulku
-            content = re.sub(r'(\s+)(self\.shared_stickers = \{[^}]+\})', r'\1--\2', content, flags=re.DOTALL)
-            content = re.sub(r'(\s+)(self\.shared_seals = \{[^}]+\})', r'\1--\2', content, flags=re.DOTALL)
-            
-            self.log("OK Sdílené sprity zakomentovány")
-        else:
-            self.log("! Sdílené sprity už jsou zakomentovány nebo nenalezeny")
-        
-        return content
-        
-    def patch_asset_loading(self, content):
-        """Přidá bezpečné načítání textur"""
-        self.log("Aplikuji patch pro bezpečné načítání textur...")
-        
-        # Jednodušší pattern pro asset loading
-        pattern = r'(self\.ASSET_ATLAS\[self\.asset_atli\[i\]\.name\]\.image = love\.graphics\.newImage\(self\.asset_atli\[i\]\.path\))'
-        
-        replacement = '''-- Bezpečné načítání textur pro LovePotion
-        local success, image = pcall(love.graphics.newImage, self.asset_atli[i].path)
-        if success then
-            self.ASSET_ATLAS[self.asset_atli[i].name].image = image
-        else
-            self.ASSET_ATLAS[self.asset_atli[i].name].image = nil
-            if wiiu_log then
-                wiiu_log("Warning: Could not load asset texture: " .. self.asset_atli[i].path)
-            end
-        end'''
-        
-        if re.search(pattern, content):
-            content = re.sub(pattern, replacement, content)
-            self.log("OK Bezpečné načítání textur přidáno")
-        else:
-            self.log("! Asset loading pattern nenalezen")
-        
-        return content
-        
-    def patch_controller_init(self, content):
-        """Oprava controller inicializace"""
-        self.log("Aplikuji patch pro controller...")
-        
-        # Jednodušší pattern
-        pattern = r'if self\.F_RUMBLE then\s+local joysticks = love\.joystick\.getJoysticks\(\)\s+if joysticks then\s+if joysticks\[1\] then\s+self\.CONTROLLER:set_gamepad\([^)]+\)\s+end\s+end\s+end'
-        
-        replacement = '''if self.F_RUMBLE then 
-        pcall(function()
-            local joysticks = love.joystick.getJoysticks()
-            if joysticks and #joysticks > 0 then 
-                if joysticks[1] then
-                    self.CONTROLLER:set_gamepad(joysticks[1])
-                end
-            end
-        end)
-    end'''
-        
-        if re.search(pattern, content, re.DOTALL):
-            content = re.sub(pattern, replacement, content, flags=re.DOTALL)
-            self.log("OK Controller inicializace opravena")
-        else:
-            self.log("! Controller pattern nenalezen")
-        
-        return content
-        
-    def add_safe_functions(self, content):
-        """Přidá bezpečné pomocné funkce"""
-        self.log("Přidávám bezpečné pomocné funkce...")
-        
-        safe_functions = '''
--- LovePotion/Wii U compatibility functions
-local function safe_set_shader(shader_name)
-    if G.SHADERS and G.SHADERS[shader_name] then
-        pcall(function()
-            love.graphics.setShader(G.SHADERS[shader_name])
-        end)
-    else
-        pcall(function()
-            love.graphics.setShader()
-        end)
-    end
+        # Tests
+        "test_runner.lua"
+    ]
+    
+    # Cesty
+    source_dir = Path("build/game")
+    tests_dir = Path("tests")
+    output_file = Path("main-consolidated.lua")
+    
+    # Začátek konsolidovaného souboru
+    consolidated_content = '''-- Balatro - Kompletní konsolidovaná verze pro Wii U/LovePotion
+-- Všechny moduly jsou sloučené do jednoho souboru
+-- Generováno automaticky pomocí consolidate_balatro.py
+
+--[[
+=== DEBUG SYSTÉM ===
+]]--
+function wiiu_log(msg)
+    love.filesystem.append("log.txt", os.date("[%H:%M:%S] ") .. tostring(msg) .. "\\n")
 end
 
--- Fallback Particles class for LovePotion
-if not Particles then
-    Particles = function(x, y, w, h, options)
-        return {
-            fade = function(self, duration, target) end,
-            fade_alpha = 1,
-            remove = function(self) end
-        }
-    end
+-- Přesměrování print na wiiu_log
+print = wiiu_log
+
+wiiu_log("Balatro Wii U - Konsolidovaná verze spuštěna!")
+
+-- Logování všech načítaných assetů
+local old_newImage = love.graphics.newImage
+love.graphics.newImage = function(path, ...)
+    wiiu_log("Načítám obrázek: " .. tostring(path))
+    return old_newImage(path, ...)
+end
+
+local old_newSource = love.audio.newSource
+love.audio.newSource = function(path, ...)
+    wiiu_log("Načítám zvuk: " .. tostring(path))
+    return old_newSource(path, ...)
+end
+
+local old_newFont = love.graphics.newFont
+love.graphics.newFont = function(path, ...)
+    wiiu_log("Načítám font: " .. tostring(path))
+    return old_newFont(path, ...)
+end
+
+function love.errorhandler(msg)
+    local trace = debug.traceback(msg, 2)
+    wiiu_log("ERROR: " .. trace)
+    return false
 end
 
 '''
+
+    def clean_lua_content(content, filename):
+        """Vyčistí a upraví obsah Lua souboru"""
         
-        # Najdi Game = Object:extend() a vlož funkce za něj
-        if 'Game = Object:extend()' in content and 'safe_set_shader' not in content:
-            content = content.replace('Game = Object:extend()', f'Game = Object:extend(){safe_functions}')
-            self.log("OK Bezpečné funkce přidány")
+        # Odstraň require příkazy
+        content = re.sub(r'require\s+["\'][^"\']+["\']', '', content)
+        
+        # Odstraň komentáře o cestách
+        content = re.sub(r'--\s*filepath:.*?\n', '', content)
+        
+        # Odstraň duplicitní prázdné řádky
+        content = re.sub(r'\n\s*\n\s*\n', '\n\n', content)
+        
+        # Speciální úpravy pro různé soubory
+        if filename == "bit.lua":
+            # Přidej podmínku pro bit modul
+            content = "bit = bit or {}\n" + content
+            
+        elif filename == "game.lua":
+            # Odstraň duplicitní definice G
+            content = re.sub(r'G\s*=\s*{[^}]*}', '', content)
+            
+        elif filename.startswith("engine/"):
+            # Pro engine soubory přidej komentář
+            module_name = filename.replace("engine/", "").replace(".lua", "").upper()
+            content = f"--[[\n=== {module_name} SYSTEM ===\n]]--\n" + content
+            
+        return content.strip()
+
+    def read_file_content(filepath):
+        """Načte obsah souboru"""
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return f.read()
+        except FileNotFoundError:
+            print(f"Soubor nenalezen: {filepath}")
+            return ""
+        except Exception as e:
+            print(f"Chyba při čtení {filepath}: {e}")
+            return ""
+
+    # Načti a spojuj soubory
+    total_lines = 0
+    processed_files = []
+    
+    for filename in file_order:
+        # Zkus najít soubor v různých složkách
+        possible_paths = [
+            source_dir / filename,
+            tests_dir / filename,
+            Path(filename)
+        ]
+        
+        content = ""
+        found_path = None
+        
+        for path in possible_paths:
+            if path.exists():
+                content = read_file_content(path)
+                found_path = path
+                break
+        
+        if content:
+            print(f"Zpracovávám: {found_path}")
+            
+            # Vyčisti obsah
+            cleaned_content = clean_lua_content(content, filename)
+            
+            if cleaned_content:
+                # Přidej do konsolidovaného souboru
+                module_comment = f"\n--[[\n=== {filename.upper().replace('/', ' - ').replace('.LUA', '')} ===\n]]--\n"
+                consolidated_content += module_comment + cleaned_content + "\n\n"
+                
+                processed_files.append(filename)
+                total_lines += len(cleaned_content.split('\n'))
         else:
-            self.log("! Game class nenalezena nebo funkce už existují")
-        
-        return content
-        
-    def patch_graphics_settings(self, content):
-        """Oprava graphics nastavení"""
-        self.log("Aplikuji patch pro graphics nastavení...")
-        
-        pattern = r'love\.graphics\.setDefaultFilter\([^)]+\)'
-        
-        replacement = '''pcall(function()
-        if love.graphics.setDefaultFilter then
-            love.graphics.setDefaultFilter(
-                self.SETTINGS.GRAPHICS.texture_scaling == 1 and 'nearest' or 'linear',
-                self.SETTINGS.GRAPHICS.texture_scaling == 1 and 'nearest' or 'linear', 1)
+            print(f"VAROVÁNÍ: Soubor {filename} nebyl nalezen!")
+
+    # Přidej LOVE callbacks
+    consolidated_content += '''
+--[[
+=== LOVE CALLBACKS ===
+]]--
+
+function love.load(arg)
+    -- Inicializace systému
+    wiiu_log("LOVE.load zavoláno")
+    
+    -- Načti všechny potřebné assety
+    for i, asset in ipairs(G.assets) do
+        if asset.type == "image" then
+            local success, image = pcall(love.graphics.newImage, asset.path)
+            if success then
+                asset.image = image
+            else
+                asset.image = nil
+                wiiu_log("Varování: Nepodařilo se načíst obrázek: " .. asset.path)
+            end
+        elseif asset.type == "sound" then
+            local success, sound = pcall(love.audio.newSource, asset.path, "static")
+            if success then
+                asset.sound = sound
+            else
+                asset.sound = nil
+                wiiu_log("Varování: Nepodařilo se načíst zvuk: " .. asset.path)
+            end
         end
-    end)'''
-        
-        if re.search(pattern, content):
-            content = re.sub(pattern, replacement, content)
-            self.log("OK Graphics nastavení opraveno")
-        else:
-            self.log("! Graphics pattern nenalezen")
-        
-        return content
-        
-    def apply_all_patches(self):
-        """Aplikuje všechny patche"""
-        self.log("Začínám aplikaci patchů pro Balatro Wii U...")
-        
-        if not self.game_lua_path.exists():
-            self.log(f"CHYBA: Soubor {self.game_lua_path} neexistuje!")
-            return False
-            
-        # Vytvoř zálohu
-        self.create_backup()
-        
-        # Načti soubor
-        content = self.read_file()
-        if not content:
-            return False
-            
-        # Aplikuj patche
-        content = self.add_safe_functions(content)
-        content = self.patch_cursor_initialization(content)
-        content = self.patch_shared_sprites(content)
-        content = self.patch_asset_loading(content)
-        content = self.patch_controller_init(content)
-        content = self.patch_graphics_settings(content)
-        
-        # Zapiš opravený soubor
-        if self.write_file(content):
-            self.log("USPECH! Všechny patche aplikovány!")
-            self.log("Balatro je nyní kompatibilní s LovePotion/Wii U")
-            return True
-        else:
-            self.log("CHYBA při zápisu patchů")
-            return False
-            
-    def show_status(self):
-        """Zobrazí stav projektu"""
-        self.log("=== STATUS PROJEKTU ===")
-        self.log(f"Projekt: {self.project_dir}")
-        self.log(f"Game.lua: {'EXISTUJE' if self.game_lua_path.exists() else 'NEEXISTUJE'}")
-        self.log(f"Záloha: {'EXISTUJE' if self.backup_path.exists() else 'NEEXISTUJE'}")
+    end
 
-def main():
-    print("Balatro Wii U Patcher v1.0")
-    print("=" * 50)
+    -- Inicializace herních stavů
+    G.state = "start"
+    G.score = 0
+    G.lives = 3
     
-    patcher = BalatroWiiUPatcher()
-    
-    while True:
-        print("\nVyberte akci:")
-        print("1. Aplikovat patche")
-        print("2. Obnovit ze zálohy") 
-        print("3. Zobrazit status")
-        print("4. Ukončit")
-        
-        choice = input("\nVaše volba (1-4): ").strip()
-        
-        if choice == "1":
-            success = patcher.apply_all_patches()
-            if success:
-                print("\nPatching dokončen! Projekt je připraven pro Wii U.")
-            else:
-                print("\nPatching selhal!")
-                
-        elif choice == "2":
-            if patcher.restore_backup():
-                print("\nSoubor obnoven ze zálohy.")
-            else:
-                print("\nZáloha neexistuje!")
-                
-        elif choice == "3":
-            patcher.show_status()
-            
-        elif choice == "4":
-            print("\nUkončuji patcher...")
-            break
-            
-        else:
-            print("\nNeplatná volba!")
+    -- Zavolej hlavní menu
+    goto_main_menu()
+end
 
-if __name__ == "__main__":
-    main()
+function love.update(dt)
+    -- Aktualizace herních objektů
+    if G.state == "play" then
+        update_game_objects(dt)
+    end
+end
+
+function love.draw()
+    -- Vykreslení herních objektů
+    if G.state == "play" then
+        draw_game_objects()
+    end
+end
+
+function love.keypressed(key, scancode, isrepeat)
+    -- Zpracování stisknutí klávesy
+    if G.state == "play" then
+        handle_input(key)
+    end
+end
+
+function love.mousepressed(x, y, button, istouch, presses)
+    -- Zpracování stisknutí myši
+    if G.state == "play" then
+        handle_mouse_click(x, y, button)
+    end
+end
+
+function love.quit()
+    wiiu_log("Hra ukončena")
+end
+'''
+
+    # Ulož konsolidovaný soubor
+    try:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(consolidated_content)
+        print(f"\nKonsolidovaný soubor úspěšně vytvořen: {output_file}")
+        print(f"Celkový počet zpracovaných řádků: {total_lines}")
+        print("Hotovo! Nyní můžete spustit hru pomocí main.lua souboru.")
+    except Exception as e:
+        print(f"Chyba při ukládání konsolidovaného souboru: {e}")
+
+# Spuštění konsolidace
+create_consolidated_balatro()

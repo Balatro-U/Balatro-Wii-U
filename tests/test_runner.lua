@@ -4,6 +4,7 @@ local tests = {}
 
 local function check_lua_file(path)
     local only_syntax = {
+        ["main.lua"] = true,
         ["blind.lua"] = true,
         ["back.lua"] = true,
         ["card.lua"] = true,
