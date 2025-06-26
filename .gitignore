@@ -41,4 +41,6 @@ luac.out
 
 #Balatro source
 assets/
+game/
+build_cpp/
 # Balatro build

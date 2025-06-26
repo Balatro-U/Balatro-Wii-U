@@ -1,1 +1,2 @@
-# Balatro-Wii-U
+# Balatro U
+![image](WiiU.png)

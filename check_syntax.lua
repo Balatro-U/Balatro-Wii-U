@@ -1,27 +1,37 @@
--- check_syntax.lua
--- Add LuaRocks paths manually if luarocks.loader fails
-package.path = package.path .. ";C:/Users/xtoma/AppData/Roaming/luarocks/share/lua/5.4/?.lua"
-package.cpath = package.cpath .. ";C:/Users/xtoma/AppData/Roaming/luarocks/lib/lua/5.4/?.dll"
-pcall(require, "luarocks.loader")
+-- check_syntax.lua s automatickými opravami
 
-local lfs = require("lfs")
-local function check_dir(path)
-  for file in lfs.dir(path) do
-    if file:match("%.lua$") then
-      local f = path..'/'..file
-      local ok, err = loadfile(f)
-      if not ok then print(f..": "..err) end
-    elseif file ~= "." and file ~= ".." then
-      check_dir(path..'/'..file)
+-- Pomocná funkce pro získání všech .lua souborů ve složce (Windows only)
+function get_lua_files(dir, files)
+    files = files or {}
+    local p = io.popen('dir "'..dir..'" /b /s')
+    for file in p:lines() do
+        if file:match('%.lua$') then
+            table.insert(files, file)
+        end
     end
-  end
+    p:close()
+    return files
 end
 
-local function check_file(f)
-  local ok, err = loadfile(f)
-  if not ok then print(f..": "..err) end
+function check_file_and_save(path, output_file)
+    local f = io.open(path, "r")
+    if not f then return end
+    local code = f:read("*a")
+    f:close()
+    local ok, err = load(code, path)
+    if not ok then
+        local error_line = path .. ": " .. err
+        print(error_line)
+        output_file:write(error_line .. "\n")
+    end
 end
 
-for file in io.popen('dir /b /s *.lua'):lines() do
-  check_file(file)
+print("Checking syntax...")
+local files = get_lua_files("game")
+local error_file = io.open('syntax_errors.txt', 'w')
+if error_file then
+    for _, file in ipairs(files) do
+        check_file_and_save(file, error_file)
+    end
+    error_file:close()
 end

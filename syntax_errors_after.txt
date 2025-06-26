@@ -1,0 +1,6 @@
+c:\Users\xtoma\Documents\GitHub\Balatro-Wii-U\game\tag.lua: [string "--Class..."]:107: 'end' expected (to close 'function' at line 103) near 'elseif'
+c:\Users\xtoma\Documents\GitHub\Balatro-Wii-U\game\engine\http_manager.lua: [string "require "love.system"..."]:11: <eof> expected near 'end'
+c:\Users\xtoma\Documents\GitHub\Balatro-Wii-U\game\engine\profile.lua: [string "local clock = os.clock..."]:72: <eof> expected near 'end'
+c:\Users\xtoma\Documents\GitHub\Balatro-Wii-U\game\functions\button_callbacks.lua: [string "--Moves the tutorial to the next step in queu..."]:1731: <eof> expected near 'end'
+c:\Users\xtoma\Documents\GitHub\Balatro-Wii-U\game\functions\misc_functions.lua: [string "--Updates all display information for all dis..."]:50: 'end' expected (to close 'for' at line 21) near 'elseif'
+c:\Users\xtoma\Documents\GitHub\Balatro-Wii-U\game\functions\UI_definitions.lua: [string "--Create a global UIDEF that contains all UI ..."]:1610: <eof> expected near 'end'
