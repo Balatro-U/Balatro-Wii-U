@@ -3,27 +3,25 @@
 cls
 
 :: Configuration
-SET "CPP_BUILD_DIR=%~dp0build_cpp"
+SET "BUILD_DIR=%~dp0to sdcard\apps\Balatro"
 SET "OUTPUT_NAME=Balatro_WiiU"
 
 :MENU
 cls
 :: Build mode selection
 echo ================================
-echo    Balatro Wii U Build System
+echo    Balatro Wii U Builder
 echo ================================
-echo 1. Install dependencies (DevkitPro, MSYS2, etc.)
-echo 2. Convert to C++ and build native
-echo 3. Deploy to Wii U
-echo 4. Clean build files
+echo 1. Install dependencies
+echo 2. Extract files
+echo 3. Build
 echo 0. Exit
 echo ================================
-set /p BUILD_MODE="Select build mode (0-4): "
+set /p BUILD_MODE="Select build mode (0-3): "
 
 if "%BUILD_MODE%"=="1" goto :INSTALL_DEPS
-if "%BUILD_MODE%"=="2" goto :BUILD_CPP
-if "%BUILD_MODE%"=="3" goto :DEPLOY
-if "%BUILD_MODE%"=="4" goto :CLEAN
+if "%BUILD_MODE%"=="2" goto :Extract
+if "%BUILD_MODE%"=="3" goto :Build
 if "%BUILD_MODE%"=="0" exit
 goto :MENU
 
@@ -74,19 +72,11 @@ if errorlevel 1 (
     echo WARNING: 7-Zip installation failed or already installed
 )
 
-:: Run DevkitPro installation (must exist as tools\install_devkitpro.py)
-echo Running DevkitPro installation...
-python tools\install_devkitpro.py
+:: Install Docker
+echo Installing Docker...
+winget install -e --id Docker.DockerDesktop --silent --accept-package-agreements --accept-source-agreements 2>nul
 if errorlevel 1 (
-    echo WARNING: DevkitPro installation had some issues
-    echo You may need to install some components manually
-)
-
-:: Install Visual Studio Build Tools (needed for some native packages)
-echo Installing Visual Studio Build Tools...
-winget install -e --id Microsoft.VisualStudio.2022.BuildTools --silent --accept-package-agreements --accept-source-agreements 2>nul
-if errorlevel 1 (
-    echo WARNING: Visual Studio Build Tools installation failed or already installed
+    echo WARNING: Docker installation failed or already installed
 )
 
 echo.
@@ -98,201 +88,151 @@ echo Components that should be installed:
 echo - Python 3.11/3.12
 echo - Git
 echo - 7-Zip
-echo - MSYS2
-echo - DevkitPro
-echo - WUT (Wii U Toolchain)
-echo - Visual Studio Build Tools
-echo.
-echo IMPORTANT NEXT STEPS:
-echo 1. Close this command prompt
-echo 2. Open a NEW command prompt (or restart computer)
-echo 3. Run build.bat again and choose option 2
-echo.
-echo Manual installation links (if needed):
-echo - MSYS2: https://www.msys2.org/
-echo - DevkitPro: https://github.com/devkitPro/installer/releases
+echo - Docker - you will need set it up yourself
 
 pause
 goto :MENU
 
-:BUILD_CPP
+:Extract
 cls
 echo ================================
-echo Converting to C++ and building...
+echo Extracting needed files from Balatro...
 echo ================================
 
-:: Setup environment variables directly (no external script)
-echo Setting up environment...
-if exist "C:\devkitPro" (
-    set "DEVKITPRO=C:\devkitPro"
-    set "DEVKITPPC=C:\devkitPro\devkitPPC"
-    echo DevkitPro found at: %DEVKITPRO%
-) else (
-    echo ERROR: DevkitPro not found at C:\devkitPro
-    echo Please run option 1 to install dependencies first.
-    pause
-    goto :MENU
+:: Check for local Balatro.exe first (priority)
+if exist "Balatro.exe" (
+    echo Found local Balatro.exe
+    set "BALATRO_PATH=%~dp0Balatro.exe"
+    goto :EXTRACT_FILES
 )
 
-:: Setup PATH with proper escaping (use % instead of ! for PATH)
-set "PATH=%DEVKITPRO%\tools\bin;%DEVKITPPC%\bin;C:\msys64\usr\bin;%PATH%"
+:: Search for Steam installation
+echo Searching for Balatro in Steam...
 
-:: Check Python
-python --version >nul 2>&1
+:: Common Steam paths
+set "STEAM_PATHS="
+set "STEAM_PATHS=%STEAM_PATHS%;%ProgramFiles(x86)%\Steam"
+set "STEAM_PATHS=%STEAM_PATHS%;%ProgramFiles%\Steam"
+set "STEAM_PATHS=%STEAM_PATHS%;C:\Steam"
+set "STEAM_PATHS=%STEAM_PATHS%;D:\Steam"
+set "STEAM_PATHS=%STEAM_PATHS%;E:\Steam"
+
+:: Check each Steam path
+for %%p in (%STEAM_PATHS%) do (
+    if exist "%%p\steamapps\common\Balatro\Balatro.exe" (
+        echo Found Balatro in Steam: %%p\steamapps\common\Balatro\
+        set "BALATRO_PATH=%%p\steamapps\common\Balatro\Balatro.exe"
+        goto :EXTRACT_FILES
+    )
+)
+
+:: Try to find Steam through registry
+echo Checking Steam registry...
+for /f "tokens=2*" %%a in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Valve\Steam" /v "InstallPath" 2^>nul') do (
+    if exist "%%b\steamapps\common\Balatro\Balatro.exe" (
+        echo Found Balatro via registry: %%b\steamapps\common\Balatro\
+        set "BALATRO_PATH=%%b\steamapps\common\Balatro\Balatro.exe"
+        goto :EXTRACT_FILES
+    )
+)
+
+:: Alternative registry path
+for /f "tokens=2*" %%a in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Valve\Steam" /v "InstallPath" 2^>nul') do (
+    if exist "%%b\steamapps\common\Balatro\Balatro.exe" (
+        echo Found Balatro via registry: %%b\steamapps\common\Balatro\
+        set "BALATRO_PATH=%%b\steamapps\common\Balatro\Balatro.exe"
+        goto :EXTRACT_FILES
+    )
+)
+
+echo ERROR: Balatro.exe not found!
+echo.
+echo Please either:
+echo 1. Copy Balatro.exe to this folder, OR
+echo 2. Install Balatro through Steam
+echo.
+echo Searched locations:
+echo - Current folder: %~dp0Balatro.exe
+echo - Steam common folders
+echo.
+pause
+goto :MENU
+
+:EXTRACT_FILES
+echo Using Balatro from: %BALATRO_PATH%
+echo.
+
+:: Create game directory if it doesn't exist
+if not exist "game" (
+    echo Creating game directory...
+    mkdir "game"
+)
+
+:: Check if 7z is available
+where 7z >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: Python not found. Please run option 1 to install dependencies.
+    echo ERROR: 7-Zip not found! Please install 7-Zip first (option 1).
     pause
     goto :MENU
 )
 
-:: Remove existing build directory if it exists
-if exist "%CPP_BUILD_DIR%" (
-    echo Removing existing build directory...
-    rmdir /s /q "%CPP_BUILD_DIR%"
-)
+:: Extract Balatro.exe (it's a ZIP archive)
+echo Extracting Balatro.exe contents...
+7z x "%BALATRO_PATH%" -o"game" -y
 
-:: Run converter (must exist as tools\balatro_converter.py)
-echo Running Lua to C++ conversion...
-python tools\balatro_converter.py
-
-:: Build C++ version
-if exist "%CPP_BUILD_DIR%" (
-    echo Building C++ version...
-    cd "%CPP_BUILD_DIR%"
-    
-    :: Check if make is available
-    make --version >nul 2>&1
-    if errorlevel 1 (
-        echo Searching for make in MSYS2...
-        if exist "C:\msys64\usr\bin\make.exe" (
-            echo Found make in MSYS2
-        ) else (
-            echo ERROR: make not found. 
-            echo Please ensure MSYS2 is installed and in PATH.
-            echo Run option 1 to install dependencies.
-            pause
-            cd "%~dp0"
-            goto :MENU
-        )
-    )
-    
-    echo.
-    echo Checking build environment...
-    echo DEVKITPRO=%DEVKITPRO%
-    echo DEVKITPPC=%DEVKITPPC%
-    
-    :: Check for required WUT tools
-    if exist "%DEVKITPRO%\wut\share\wut_rules" (
-        echo WUT rules found
-    ) else (
-        echo WARNING: WUT rules not found - build may fail
-    )
-    
-    echo.
-    echo Cleaning previous build files...
-    make clean 2>nul
-    
-    echo Compiling...
-    echo This may take a few minutes...
-    make -j4
-    
-    if exist "balatro_wiiu.wuhb" (
-        echo.
-        echo ================================
-        echo C++ build completed successfully!
-        echo ================================
-        copy "balatro_wiiu.wuhb" "..\%OUTPUT_NAME%.wuhb" >nul
-        echo Output: %OUTPUT_NAME%.wuhb
-        echo.
-        echo The WUHB file is ready for Wii U!
-        echo You can now use option 3 to deploy it.
-    ) else if exist "balatro_wiiu.rpx" (
-        echo.
-        echo C++ build completed (RPX only)!
-        copy "balatro_wiiu.rpx" "..\%OUTPUT_NAME%.rpx" >nul
-        echo Output: %OUTPUT_NAME%.rpx
-        echo Note: WUHB creation failed, but RPX is available
-    ) else (
-        echo.
-        echo ================================
-        echo ERROR: C++ build failed
-        echo ================================
-        echo Checking for common issues...
-        if not exist "src\main.cpp" (
-            echo - Missing src/main.cpp
-        )
-        if not exist "Makefile" (
-            echo - Missing Makefile
-        )
-        echo.
-        echo Debug information:
-        echo DEVKITPRO=%DEVKITPRO%
-        echo Current directory: %CD%
-        echo.
-        echo Build errors:
-        make 2>&1
-        echo.
-        echo Try running option 1 to install dependencies first.
-        pause
-        cd "%~dp0"
-        goto :MENU
-    )
-    
-    cd "%~dp0"
-) else (
-    echo ERROR: Conversion failed - build directory not created.
-    echo Make sure tools\balatro_converter.py exists and works correctly.
+if errorlevel 1 (
+    echo ERROR: Failed to extract Balatro.exe
+    echo Make sure the file is not corrupted and 7-Zip is installed.
     pause
     goto :MENU
 )
+
+echo.
+echo ================================
+echo Extraction completed successfully!
+echo ================================
+echo.
+echo Game files extracted to: game\
+echo.
+
+:: List extracted files
+echo Extracted contents:
+dir /b "game"
 
 pause
 goto :MENU
 
-:DEPLOY
+:Build
 cls
 echo ================================
-echo Deploying to Wii U...
+echo Building...
 echo ================================
-
-:: Check if there are files to deploy
-if not exist "*.wuhb" if not exist "*.rpx" (
-    echo ERROR: No WUHB or RPX files found to deploy.
-    echo Please run option 2 to build first.
+echo Cloning Lovepotion repository...
+git clone https://github.com/xtomasnemec/lovepotion.git --branch 3.1.0-development --single-branch
+if errorlevel 1 (
+    echo ERROR: Failed to clone Lovepotion repository.
+    echo Make sure Git is installed and working.
     pause
     goto :MENU
 )
+cd lovepotion
+echo Building Lovepotion...
+call build-wiiu.bat
+cd ..
 
-set /p WIIU_IP="Enter Wii U IP address: "
-python tools\deploy_wiiu.py %WIIU_IP%
+:: Copy built file(s) to build dir
+echo Copying built files to %BUILD_DIR%...
+if not exist "%BUILD_DIR%" (
+    mkdir "%BUILD_DIR%"
+)
+copy /Y ".\lovepotion\build\lovepotion.wuhb" "%BUILD_DIR%\"
 
-pause
-goto :MENU
+echo Building Balatro...
+python build.py
 
-:CLEAN
-cls
+echo.
 echo ================================
-echo Cleaning build files...
+echo Build complete!
 echo ================================
-
-if exist "%CPP_BUILD_DIR%" (
-    echo Removing C++ build directory...
-    rmdir /s /q "%CPP_BUILD_DIR%"
-)
-
-if exist "*.wuhb" (
-    echo Removing WUHB files...
-    del /q "*.wuhb"
-)
-
-if exist "*.rpx" (
-    echo Removing RPX files...
-    del /q "*.rpx"
-)
-
-echo Cleanup completed!
-echo NOTE: Dependencies (DevkitPro, MSYS2) were NOT removed.
-echo To remove them, use Windows "Add or Remove Programs"
-
 pause
 goto :MENU
