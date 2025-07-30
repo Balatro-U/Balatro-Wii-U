@@ -1,9 +1,15 @@
 @echo off
 
+::stolen from https://gist.github.com/maciakl/f30629d1a606030e55855842447472c5
+if "%1" == "elevated" goto start
+powershell -command "Start-Process %~nx0 elevated -Verb runas"
+goto :EOF
+:start
+
 cls
 
 :: Configuration
-SET "BUILD_DIR=%~dp0to sdcard\apps\Balatro"
+SET "BUILD_DIR=%~dp0to sdcard\wiiu\apps\Balatro"
 SET "OUTPUT_NAME=Balatro_WiiU"
 
 :MENU
@@ -71,6 +77,12 @@ winget install -e --id 7zip.7zip --silent --accept-package-agreements --accept-s
 if errorlevel 1 (
     echo WARNING: 7-Zip installation failed or already installed
 )
+:: Install WSL
+echo Installing Windows Subsystem for Linux (WSL)...
+winget install -e --id Canonical.Ubuntu.2204 --silent --accept-package-agreements --accept-source-agreements 2>nul
+if errorlevel 1 (
+    echo WARNING: WSL installation failed or already installed
+)
 
 :: Install Docker
 echo Installing Docker...
@@ -88,6 +100,7 @@ echo Components that should be installed:
 echo - Python 3.11/3.12
 echo - Git
 echo - 7-Zip
+echo - Ubuntu 22.04 WSL - you will need to set it up yourself
 echo - Docker - you will need set it up yourself
 
 pause
@@ -208,6 +221,8 @@ echo ================================
 echo Building...
 echo ================================
 echo Cloning Lovepotion repository...
+mkdir temp
+cd temp
 git clone https://github.com/xtomasnemec/lovepotion.git --branch 3.1.0-development --single-branch
 if errorlevel 1 (
     echo ERROR: Failed to clone Lovepotion repository.
@@ -215,9 +230,13 @@ if errorlevel 1 (
     pause
     goto :MENU
 )
-cd lovepotion
+cd ..
+:: Copy game files to temp directory
+echo Copying game files to temp directory...
+copy /Y "game\*" ".\temp\lovepotion\game\"
+cd temp\lovepotion
 echo Building Lovepotion...
-call build-wiiu.bat
+call build.bat
 cd ..
 
 :: Copy built file(s) to build dir
@@ -225,12 +244,10 @@ echo Copying built files to %BUILD_DIR%...
 if not exist "%BUILD_DIR%" (
     mkdir "%BUILD_DIR%"
 )
-copy /Y ".\lovepotion\build\lovepotion.wuhb" "%BUILD_DIR%\"
+copy /Y ".\temp\lovepotion\build\balatro.wuhb" "%BUILD_DIR%\"
+rmdir /s /q temp
 
-echo Building Balatro...
-python build.py
-
-echo.
+cls
 echo ================================
 echo Build complete!
 echo ================================
