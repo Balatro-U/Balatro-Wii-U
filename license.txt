@@ -1,7 +1,26 @@
+Credits and Licensing Information
+================================
+
+This project contains third-party code under their respective licenses (MIT, zlib, BSD, LGPL, etc.), which are listed below.
+Only the original code by the project author is licensed under CC BY-SA 4.0.
+
 Licensing information
 =====================
 
 This distribution contains code from the following projects (full license text below):
+
+ - Balatro
+	Website: https://www.playbalatro.com/
+	Creator: LocalThunk
+
+ - Lovepotion
+	Website: https://github.com/lovebrew/lovepotion
+	License: MIT
+	Copyright (c) 2018 - Present: Serena S. Postelnek & Logan Hickok-Dickson
+
+ - CafeGLSL
+	Website: https://github.com/Exzap/CafeGLSL
+	License: none
 
  - LOVE
 	Website: https://love2d.org/

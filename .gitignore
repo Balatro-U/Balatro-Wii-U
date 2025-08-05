@@ -43,4 +43,7 @@ luac.out
 assets/
 game/
 build_cpp/
+sort/
+temp/
+to sdcard/
 # Balatro build

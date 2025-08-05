@@ -21,13 +21,29 @@ echo ================================
 echo 1. Install dependencies
 echo 2. Extract files
 echo 3. Build
+echo 4. Clean
 echo 0. Exit
 echo ================================
-set /p BUILD_MODE="Select build mode (0-3): "
+set /p BUILD_MODE="Select build mode (0-4): "
 
 if "%BUILD_MODE%"=="1" goto :INSTALL_DEPS
 if "%BUILD_MODE%"=="2" goto :Extract
 if "%BUILD_MODE%"=="3" goto :Build
+if "%BUILD_MODE%"=="4" (
+    cls
+    echo ================================
+    echo Cleaning...
+    echo ================================
+    rmdir /s /q "%BUILD_DIR%"
+    echo Build directory cleaned.
+    rmdir /s /q temp
+    echo Temporary files cleaned.
+    echo Cleaning up old Docker images...
+    docker rmi lovepotion-wiiu 2>nul || echo No old image to remove
+    docker builder prune -f -a 2>nul || echo No old build cache to prune
+    pause
+    goto :MENU
+)
 if "%BUILD_MODE%"=="0" exit
 goto :MENU
 
@@ -54,15 +70,6 @@ if not exist "%WINDIR%\admin_test.tmp" (
 )
 
 echo Installing required dependencies for Wii U development...
-
-:: Install Python
-echo Installing Python 3.11...
-winget install -e --id Python.Python.3.11 --silent --accept-package-agreements --accept-source-agreements 2>nul
-if errorlevel 1 (
-    echo WARNING: Python installation failed or already installed
-    echo Trying alternative Python installation...
-    winget install -e --id Python.Python.3.12 --silent --accept-package-agreements --accept-source-agreements 2>nul
-)
 
 :: Install Git
 echo Installing Git...
@@ -97,7 +104,6 @@ echo Dependency Installation Complete!
 echo ================================
 echo.
 echo Components that should be installed:
-echo - Python 3.11/3.12
 echo - Git
 echo - 7-Zip
 echo - Ubuntu 22.04 WSL - you will need to set it up yourself
@@ -121,23 +127,6 @@ if exist "Balatro.exe" (
 
 :: Search for Steam installation
 echo Searching for Balatro in Steam...
-
-:: Common Steam paths
-set "STEAM_PATHS="
-set "STEAM_PATHS=%STEAM_PATHS%;%ProgramFiles(x86)%\Steam"
-set "STEAM_PATHS=%STEAM_PATHS%;%ProgramFiles%\Steam"
-set "STEAM_PATHS=%STEAM_PATHS%;C:\Steam"
-set "STEAM_PATHS=%STEAM_PATHS%;D:\Steam"
-set "STEAM_PATHS=%STEAM_PATHS%;E:\Steam"
-
-:: Check each Steam path
-for %%p in (%STEAM_PATHS%) do (
-    if exist "%%p\steamapps\common\Balatro\Balatro.exe" (
-        echo Found Balatro in Steam: %%p\steamapps\common\Balatro\
-        set "BALATRO_PATH=%%p\steamapps\common\Balatro\Balatro.exe"
-        goto :EXTRACT_FILES
-    )
-)
 
 :: Try to find Steam through registry
 echo Checking Steam registry...
@@ -172,25 +161,19 @@ pause
 goto :MENU
 
 :EXTRACT_FILES
-echo Using Balatro from: %BALATRO_PATH%
-echo.
-
-:: Create game directory if it doesn't exist
-if not exist "game" (
-    echo Creating game directory...
-    mkdir "game"
-)
-
-:: Check if 7z is available
-where 7z >nul 2>&1
-if errorlevel 1 (
-    echo ERROR: 7-Zip not found! Please install 7-Zip first (option 1).
+echo Using Balatro from: "%BALATRO_PATH%"
+if "%BALATRO_PATH%"=="" (
+    echo ERROR: BALATRO_PATH is not set!
     pause
     goto :MENU
 )
-
-:: Extract Balatro.exe (it's a ZIP archive)
-echo Extracting Balatro.exe contents...
+if not exist "game" (
+    echo Creating game directory...
+    mkdir "game"
+    else (
+        rmdir /s /q "game" 2>nul
+    )
+)
 7z x "%BALATRO_PATH%" -o"game" -y
 
 if errorlevel 1 (
@@ -207,10 +190,6 @@ echo ================================
 echo.
 echo Game files extracted to: game\
 echo.
-
-:: List extracted files
-echo Extracted contents:
-dir /b "game"
 
 pause
 goto :MENU
@@ -231,6 +210,9 @@ if errorlevel 1 (
     goto :MENU
 )
 cd ..
+echo Patching the game files...
+copy /Y "patch\*" "game\"
+sleep 3
 :: Copy game files to temp directory
 echo Copying game files to temp directory...
 copy /Y "game\*" ".\temp\lovepotion\game\"
@@ -245,7 +227,6 @@ if not exist "%BUILD_DIR%" (
     mkdir "%BUILD_DIR%"
 )
 copy /Y ".\temp\lovepotion\build\balatro.wuhb" "%BUILD_DIR%\"
-rmdir /s /q temp
 
 cls
 echo ================================
