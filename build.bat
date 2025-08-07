@@ -9,6 +9,7 @@ goto :EOF
 cls
 
 :: Configuration
+SET "ROOT_BUILD_DIR=%~dp0to sdcard"
 SET "BUILD_DIR=%~dp0to sdcard\wiiu\apps\Balatro"
 SET "OUTPUT_NAME=Balatro_WiiU"
 
@@ -34,7 +35,8 @@ if "%BUILD_MODE%"=="4" (
     echo ================================
     echo Cleaning...
     echo ================================
-    rmdir /s /q "%BUILD_DIR%"
+    rmdir /s /q "%ROOT_BUILD_DIR%"
+    rmdir /s /q "%~dp0temp"
     echo Build directory cleaned.
     rmdir /s /q temp
     echo Temporary files cleaned.
@@ -113,15 +115,41 @@ pause
 goto :MENU
 
 :Extract
+
 cls
+setlocal enabledelayedexpansion
 echo ================================
 echo Extracting needed files from Balatro...
 echo ================================
 
 :: Check for local Balatro.exe first (priority)
-if exist "Balatro.exe" (
+if exist "%~dp0Balatro.exe" (
     echo Found local Balatro.exe
     set "BALATRO_PATH=%~dp0Balatro.exe"
+    echo Checking SHA256 hash of Balatro.exe...
+    certUtil -hashfile "%~dp0Balatro.exe" SHA256 > hash.txt
+    set "BALATRO_HASH="
+    set "HASH_FOUND="
+    for /f "skip=1 delims=" %%H in (hash.txt) do (
+        if not defined HASH_FOUND if not "%%H"=="" (
+            set "BALATRO_HASH=%%H"
+            set "HASH_FOUND=1"
+        )
+    )
+    set "BALATRO_HASH=!BALATRO_HASH: =!"
+    del hash.txt
+    if "!BALATRO_HASH!"=="" (
+        echo ERROR: Failed to read SHA256 hash! Aborting.
+        pause
+        goto :MENU
+    )
+    set "BALATRO_HASH_EXPECTED=0d75fe164accf3312734d4b37ac98788dd15f0b8e4f9bb8b7f90c4e59de93f47"
+    echo SHA256: !BALATRO_HASH!
+    if /I not "!BALATRO_HASH!"=="!BALATRO_HASH_EXPECTED!" (
+        echo WARNING: The hash of Balatro.exe does not match the expected version!
+        echo Continue? (press any key to continue or Ctrl+C to cancel)
+        pause
+    )
     goto :EXTRACT_FILES
 )
 
@@ -134,19 +162,77 @@ for /f "tokens=2*" %%a in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\V
     if exist "%%b\steamapps\common\Balatro\Balatro.exe" (
         echo Found Balatro via registry: %%b\steamapps\common\Balatro\
         set "BALATRO_PATH=%%b\steamapps\common\Balatro\Balatro.exe"
+        echo Checking SHA256 hash of Balatro.exe...
+        certUtil -hashfile "%%b\steamapps\common\Balatro\Balatro.exe" SHA256 > hash.txt
+        set "BALATRO_HASH="
+        for /f "skip=1 delims=" %%H in (hash.txt) do (
+            if not "%%H"=="" (
+                set "BALATRO_HASH=%%H"
+            )
+        )
+        set "BALATRO_HASH="
+        set "HASH_FOUND="
+        for /f "skip=1 delims=" %%H in (hash.txt) do (
+            if not defined HASH_FOUND if not "%%H"=="" (
+                set "BALATRO_HASH=%%H"
+                set "HASH_FOUND=1"
+            )
+        )
+        set "BALATRO_HASH=!BALATRO_HASH: =!"
+        del hash.txt
+        if "!BALATRO_HASH!"=="" (
+            echo ERROR: Failed to read SHA256 hash! Aborting.
+            pause
+            goto :MENU
+        )
+        set "BALATRO_HASH_EXPECTED=0d75fe164accf3312734d4b37ac98788dd15f0b8e4f9bb8b7f90c4e59de93f47"
+        echo SHA256: !BALATRO_HASH!
+        if /I not "!BALATRO_HASH!"=="!BALATRO_HASH_EXPECTED!" (
+            echo WARNING: The hash of Balatro.exe does not match the expected version!
+            echo Continue? (press any key to continue or Ctrl+C to cancel)
+            pause
+        )
         goto :EXTRACT_FILES
     )
-)
-
+}
 :: Alternative registry path
 for /f "tokens=2*" %%a in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Valve\Steam" /v "InstallPath" 2^>nul') do (
     if exist "%%b\steamapps\common\Balatro\Balatro.exe" (
         echo Found Balatro via registry: %%b\steamapps\common\Balatro\
         set "BALATRO_PATH=%%b\steamapps\common\Balatro\Balatro.exe"
+        echo Checking SHA256 hash of Balatro.exe...
+        certUtil -hashfile "%%b\steamapps\common\Balatro\Balatro.exe" SHA256 > hash.txt
+        set "BALATRO_HASH="
+        for /f "skip=1 delims=" %%H in (hash.txt) do (
+            if not "%%H"=="" (
+                set "BALATRO_HASH=%%H"
+            )
+        )
+        set "BALATRO_HASH="
+        set "HASH_FOUND="
+        for /f "skip=1 delims=" %%H in (hash.txt) do (
+            if not defined HASH_FOUND if not "%%H"=="" (
+                set "BALATRO_HASH=%%H"
+                set "HASH_FOUND=1"
+            )
+        )
+        set "BALATRO_HASH=!BALATRO_HASH: =!"
+        del hash.txt
+        if "!BALATRO_HASH!"=="" (
+            echo ERROR: Failed to read SHA256 hash! Aborting.
+            pause
+            goto :MENU
+        )
+        set "BALATRO_HASH_EXPECTED=0d75fe164accf3312734d4b37ac98788dd15f0b8e4f9bb8b7f90c4e59de93f47"
+        echo SHA256: !BALATRO_HASH!
+        if /I not "!BALATRO_HASH!"=="!BALATRO_HASH_EXPECTED!" (
+            echo WARNING: The hash of Balatro.exe does not match the expected version!
+            echo Continue? (press any key to continue or Ctrl+C to cancel)
+            pause
+        )
         goto :EXTRACT_FILES
     )
-)
-
+}
 echo ERROR: Balatro.exe not found!
 echo.
 echo Please either:
@@ -162,19 +248,21 @@ goto :MENU
 
 :EXTRACT_FILES
 echo Using Balatro from: "%BALATRO_PATH%"
+echo Debug: BALATRO_PATH="%BALATRO_PATH%"
 if "%BALATRO_PATH%"=="" (
     echo ERROR: BALATRO_PATH is not set!
     pause
     goto :MENU
 )
-if not exist "game" (
+if not exist "%~dp0game" (
     echo Creating game directory...
-    mkdir "game"
-    else (
-        rmdir /s /q "game" 2>nul
-    )
+    mkdir "%~dp0game"
+) else (
+    echo Removing existing game directory...
+    rmdir /s /q "%~dp0game" 2>nul
+    mkdir "%~dp0game"
 )
-7z x "%BALATRO_PATH%" -o"game" -y
+7z x "%BALATRO_PATH%" -o"%~dp0game" -y
 
 if errorlevel 1 (
     echo ERROR: Failed to extract Balatro.exe
@@ -199,9 +287,12 @@ cls
 echo ================================
 echo Building...
 echo ================================
+rmdir /s /q "%ROOT_BUILD_DIR%"
+rmdir /s /q "%~dp0temp"
+echo Build directory cleaned.
 echo Cloning Lovepotion repository...
-mkdir temp
-cd temp
+mkdir "%~dp0temp"
+cd /d "%~dp0temp"
 git clone https://github.com/xtomasnemec/lovepotion.git --branch 3.1.0-development --single-branch
 if errorlevel 1 (
     echo ERROR: Failed to clone Lovepotion repository.
@@ -209,26 +300,35 @@ if errorlevel 1 (
     pause
     goto :MENU
 )
-cd ..
+cd /d "%~dp0"
 echo Patching the game files...
-copy /Y "patch\*" "game\"
-sleep 3
-:: Copy game files to temp directory
-echo Copying game files to temp directory...
-copy /Y "game\*" ".\temp\lovepotion\game\"
-cd temp\lovepotion
+xcopy "%~dp0game\*" "%~dp0temp\lovepotion\game\" /E /Y /I
+xcopy "%~dp0patch\*" "%~dp0temp\lovepotion\game\" /E /Y /I
+cd /d "%~dp0temp\lovepotion"
 echo Building Lovepotion...
 call build.bat
-cd ..
+cd /d "%~dp0"
+
+:: Check existence and size of balatro.wuhb
+set "WUHBSRC=%~dp0temp\lovepotion\build\balatro.wuhb"
+if not exist "%WUHBSRC%" (
+    echo ERROR: balatro.wuhb not found in %WUHBSRC%.
+    pause
+    goto :MENU
+)
+for %%F in ("%WUHBSRC%") do set "WUHBSIZE=%%~zF"
+echo Size of balatro.wuhb after build: %WUHBSIZE% bytes
 
 :: Copy built file(s) to build dir
 echo Copying built files to %BUILD_DIR%...
 if not exist "%BUILD_DIR%" (
     mkdir "%BUILD_DIR%"
 )
-copy /Y ".\temp\lovepotion\build\balatro.wuhb" "%BUILD_DIR%\"
+xcopy "%WUHBSRC%" "%BUILD_DIR%\" /E /Y /I
+for %%F in ("%BUILD_DIR%\balatro.wuhb") do set "WUHBSIZE2=%%~zF"
+echo Size of balatro.wuhb in %BUILD_DIR%: %WUHBSIZE2% bytes
 
-cls
+::cls
 echo ================================
 echo Build complete!
 echo ================================

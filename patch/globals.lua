@@ -76,7 +76,9 @@ function Game:set_globals()
         self.F_NO_ACHIEVEMENTS = true
         self.F_ENGLISH_ONLY = nil
         self.F_SOUND_THREAD = false 
-        
+        self.F_NO_ERROR_HAND = false 
+        self.F_HTTP_SCORES = false
+        self.F_CRASH_REPORTS = false
         self.F_EXTERNAL_LINKS = false
         self.F_HIDE_BG = true
     end

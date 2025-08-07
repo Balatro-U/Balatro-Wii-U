@@ -4,6 +4,7 @@ Game = Object:extend()
 --Class Methods
 function Game:init()
     G = self
+    print("[DEBUG] G initialized, type: " .. type(G) .. ", G == self: " .. tostring(G == self))
 
     self:set_globals()
 end
@@ -129,6 +130,7 @@ function Game:start_up()
 
     --Load all shaders from resources
     self.SHADERS = {}
+    print("[DEBUG] Initialized self.SHADERS as table, type: " .. type(self.SHADERS))
     
     -- WII U SPECIFIC: Use converted .gsh shaders instead of .fs shaders
     if love.system.getOS() == "cafe" then  -- Wii U platform
@@ -168,6 +170,9 @@ function Game:start_up()
             shader_count = shader_count + 1
         end
         print("[WII U] Shader loading completed. Total shaders loaded: " .. shader_count)
+        print("[DEBUG] After loading, self.SHADERS type: " .. type(self.SHADERS))
+        print("[DEBUG] After loading, G.SHADERS type: " .. type(G.SHADERS))
+        print("[DEBUG] self.SHADERS == G.SHADERS: " .. tostring(self.SHADERS == G.SHADERS))
     else
         -- Original PC code for .fs shaders
         local shader_files = love.filesystem.getDirectoryItems("resources/shaders")
@@ -184,12 +189,14 @@ function Game:start_up()
 
     --Input handler/controller for game objects
     self.CONTROLLER = Controller()
-    love.joystick.loadGamepadMappings("resources/gamecontrollerdb.txt")
-    if self.F_RUMBLE then 
-        local joysticks = love.joystick.getJoysticks()
-        if joysticks then 
-            if joysticks[1] then 
-                self.CONTROLLER:set_gamepad(joysticks[2] or joysticks[1])
+    if love.joystick then
+        love.joystick.loadGamepadMappings("resources/gamecontrollerdb.txt")
+        if self.F_RUMBLE then 
+            local joysticks = love.joystick.getJoysticks()
+            if joysticks then 
+                if joysticks[1] then 
+                    self.CONTROLLER:set_gamepad(joysticks[2] or joysticks[1])
+                end
             end
         end
     end
@@ -1080,96 +1087,83 @@ function Game:set_render_settings()
         {name = "blind_chips", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/BlindChips.png",px=34,py=34, frames = 21},
         {name = "shop_sign", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/ShopSignAnimation.png",px=113,py=57, frames = 4}
     }
+    self.asset_atli = {
+        {name = "cards_1", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/8BitDeck.png",px=71,py=95},
+        {name = "cards_2", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/8BitDeck_opt2.png",px=71,py=95},
+        {name = "centers", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/Enhancers.png",px=71,py=95},
+        {name = "Joker", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/Jokers.png",px=71,py=95},
+        {name = "Tarot", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/Tarots.png",px=71,py=95},
+        {name = "Voucher", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/Vouchers.png",px=71,py=95},
+        {name = "Booster", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/boosters.png",px=71,py=95},
+        {name = "ui_1", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/ui_assets.png",px=18,py=18},
+        {name = "ui_2", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/ui_assets_opt2.png",px=18,py=18},
+        {name = "balatro", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/balatro.png",px=333,py=216},        
+        {name = 'gamepad_ui', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/gamepad_ui.png",px=32,py=32},
+        {name = 'icons', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/icons.png",px=66,py=66},
+        {name = 'tags', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/tags.png",px=34,py=34},
+        {name = 'stickers', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/stickers.png",px=71,py=95},
+        {name = 'chips', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/chips.png",px=29,py=29},
+
+        {name = 'collab_AU_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_AU_1.png",px=71,py=95},
+        {name = 'collab_AU_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_AU_2.png",px=71,py=95},
+        {name = 'collab_TW_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_TW_1.png",px=71,py=95},
+        {name = 'collab_TW_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_TW_2.png",px=71,py=95},
+        {name = 'collab_VS_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_VS_1.png",px=71,py=95},
+        {name = 'collab_VS_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_VS_2.png",px=71,py=95},
+        {name = 'collab_DTD_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_DTD_1.png",px=71,py=95},
+        {name = 'collab_DTD_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_DTD_2.png",px=71,py=95},
+
+        {name = 'collab_CYP_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_CYP_1.png",px=71,py=95},
+        {name = 'collab_CYP_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_CYP_2.png",px=71,py=95},
+        {name = 'collab_STS_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_STS_1.png",px=71,py=95},
+        {name = 'collab_STS_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_STS_2.png",px=71,py=95},
+        {name = 'collab_TBoI_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_TBoI_1.png",px=71,py=95},
+        {name = 'collab_TBoI_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_TBoI_2.png",px=71,py=95},
+        {name = 'collab_SV_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_SV_1.png",px=71,py=95},
+        {name = 'collab_SV_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_SV_2.png",px=71,py=95},
     
-    -- WII U SPECIFIC: Limit asset atlas to essential textures only
-    if love.system.getOS() == "cafe" then  -- Wii U platform
-        print("[WII U] Loading minimal texture set for memory optimization")
-        self.asset_atli = {
-            {name = "cards_1", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/8BitDeck.png",px=71,py=95},
-            {name = "centers", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/Enhancers.png",px=71,py=95},
-            {name = "Joker", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/Jokers.png",px=71,py=95},
-            {name = "ui_1", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/ui_assets.png",px=18,py=18},
-            {name = "balatro", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/balatro.png",px=333,py=216},
-            {name = "stickers", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/stickers.png",px=71,py=95},
-        }
-    else
-        -- Full texture set for other platforms
-        self.asset_atli = {
-            {name = "cards_1", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/8BitDeck.png",px=71,py=95},
-            {name = "cards_2", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/8BitDeck_opt2.png",px=71,py=95},
-            {name = "centers", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/Enhancers.png",px=71,py=95},
-            {name = "Joker", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/Jokers.png",px=71,py=95},
-            {name = "Tarot", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/Tarots.png",px=71,py=95},
-            {name = "Voucher", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/Vouchers.png",px=71,py=95},
-            {name = "Booster", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/boosters.png",px=71,py=95},
-            {name = "ui_1", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/ui_assets.png",px=18,py=18},
-            {name = "ui_2", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/ui_assets_opt2.png",px=18,py=18},
-            {name = "balatro", path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/balatro.png",px=333,py=216},        
-            {name = 'gamepad_ui', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/gamepad_ui.png",px=32,py=32},
-            {name = 'icons', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/icons.png",px=66,py=66},
-            {name = 'tags', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/tags.png",px=34,py=34},
-            {name = 'stickers', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/stickers.png",px=71,py=95},
-            {name = 'chips', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/chips.png",px=29,py=29},
+        {name = 'collab_SK_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_SK_1.png",px=71,py=95},
+        {name = 'collab_SK_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_SK_2.png",px=71,py=95},
+        {name = 'collab_DS_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_DS_1.png",px=71,py=95},
+        {name = 'collab_DS_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_DS_2.png",px=71,py=95},
+        {name = 'collab_CL_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_CL_1.png",px=71,py=95},
+        {name = 'collab_CL_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_CL_2.png",px=71,py=95},
+        {name = 'collab_D2_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_D2_1.png",px=71,py=95},
+        {name = 'collab_D2_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_D2_2.png",px=71,py=95},
+        {name = 'collab_PC_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_PC_1.png",px=71,py=95},
+        {name = 'collab_PC_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_PC_2.png",px=71,py=95},
+        {name = 'collab_WF_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_WF_1.png",px=71,py=95},
+        {name = 'collab_WF_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_WF_2.png",px=71,py=95},
+        {name = 'collab_EG_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_EG_1.png",px=71,py=95},
+        {name = 'collab_EG_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_EG_2.png",px=71,py=95},
+        {name = 'collab_XR_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_XR_1.png",px=71,py=95},
+        {name = 'collab_XR_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_XR_2.png",px=71,py=95},
 
-            {name = 'collab_AU_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_AU_1.png",px=71,py=95},
-            {name = 'collab_AU_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_AU_2.png",px=71,py=95},
-            {name = 'collab_TW_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_TW_1.png",px=71,py=95},
-            {name = 'collab_TW_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_TW_2.png",px=71,py=95},
-            {name = 'collab_VS_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_VS_1.png",px=71,py=95},
-            {name = 'collab_VS_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_VS_2.png",px=71,py=95},
-            {name = 'collab_DTD_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_DTD_1.png",px=71,py=95},
-            {name = 'collab_DTD_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_DTD_2.png",px=71,py=95},
-
-            {name = 'collab_CYP_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_CYP_1.png",px=71,py=95},
-            {name = 'collab_CYP_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_CYP_2.png",px=71,py=95},
-            {name = 'collab_STS_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_STS_1.png",px=71,py=95},
-            {name = 'collab_STS_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_STS_2.png",px=71,py=95},
-            {name = 'collab_TBoI_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_TBoI_1.png",px=71,py=95},
-            {name = 'collab_TBoI_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_TBoI_2.png",px=71,py=95},
-            {name = 'collab_SV_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_SV_1.png",px=71,py=95},
-            {name = 'collab_SV_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_SV_2.png",px=71,py=95},
-        
-            {name = 'collab_SK_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_SK_1.png",px=71,py=95},
-            {name = 'collab_SK_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_SK_2.png",px=71,py=95},
-            {name = 'collab_DS_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_DS_1.png",px=71,py=95},
-            {name = 'collab_DS_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_DS_2.png",px=71,py=95},
-            {name = 'collab_CL_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_CL_1.png",px=71,py=95},
-            {name = 'collab_CL_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_CL_2.png",px=71,py=95},
-            {name = 'collab_D2_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_D2_1.png",px=71,py=95},
-            {name = 'collab_D2_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_D2_2.png",px=71,py=95},
-            {name = 'collab_PC_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_PC_1.png",px=71,py=95},
-            {name = 'collab_PC_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_PC_2.png",px=71,py=95},
-            {name = 'collab_WF_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_WF_1.png",px=71,py=95},
-            {name = 'collab_WF_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_WF_2.png",px=71,py=95},
-            {name = 'collab_EG_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_EG_1.png",px=71,py=95},
-            {name = 'collab_EG_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_EG_2.png",px=71,py=95},
-            {name = 'collab_XR_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_XR_1.png",px=71,py=95},
-            {name = 'collab_XR_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_XR_2.png",px=71,py=95},
-
-            {name = 'collab_CR_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_CR_1.png",px=71,py=95},
-            {name = 'collab_CR_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_CR_2.png",px=71,py=95},
-            {name = 'collab_BUG_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_BUG_1.png",px=71,py=95},
-            {name = 'collab_BUG_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_BUG_2.png",px=71,py=95},
-            {name = 'collab_FO_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_FO_1.png",px=71,py=95},
-            {name = 'collab_FO_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_FO_2.png",px=71,py=95},
-            {name = 'collab_DBD_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_DBD_1.png",px=71,py=95},
-            {name = 'collab_DBD_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_DBD_2.png",px=71,py=95},
-            {name = 'collab_C7_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_C7_1.png",px=71,py=95},
-            {name = 'collab_C7_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_C7_2.png",px=71,py=95},
-            {name = 'collab_R_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_R_1.png",px=71,py=95},
-            {name = 'collab_R_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_R_2.png",px=71,py=95},
-            {name = 'collab_AC_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_AC_1.png",px=71,py=95},
-            {name = 'collab_AC_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_AC_2.png",px=71,py=95},
-            {name = 'collab_STP_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_STP_1.png",px=71,py=95},
-            {name = 'collab_STP_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_STP_2.png",px=71,py=95}
-        }
-    end
+        {name = 'collab_CR_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_CR_1.png",px=71,py=95},
+        {name = 'collab_CR_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_CR_2.png",px=71,py=95},
+        {name = 'collab_BUG_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_BUG_1.png",px=71,py=95},
+        {name = 'collab_BUG_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_BUG_2.png",px=71,py=95},
+        {name = 'collab_FO_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_FO_1.png",px=71,py=95},
+        {name = 'collab_FO_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_FO_2.png",px=71,py=95},
+        {name = 'collab_DBD_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_DBD_1.png",px=71,py=95},
+        {name = 'collab_DBD_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_DBD_2.png",px=71,py=95},
+        {name = 'collab_C7_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_C7_1.png",px=71,py=95},
+        {name = 'collab_C7_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_C7_2.png",px=71,py=95},
+        {name = 'collab_R_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_R_1.png",px=71,py=95},
+        {name = 'collab_R_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_R_2.png",px=71,py=95},
+        {name = 'collab_AC_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_AC_1.png",px=71,py=95},
+        {name = 'collab_AC_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_AC_2.png",px=71,py=95},
+        {name = 'collab_STP_1', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_STP_1.png",px=71,py=95},
+        {name = 'collab_STP_2', path = "resources/textures/"..self.SETTINGS.GRAPHICS.texture_scaling.."x/collabs/collab_STP_2.png",px=71,py=95}
+    }
+    
     self.asset_images = {
         {name = "playstack_logo", path = "resources/textures/1x/playstack-logo.png", px=1417,py=1417},
         {name = "localthunk_logo", path = "resources/textures/1x/localthunk-logo.png", px=1390,py=560}
     }
 
     -- Initialize atlas tables before loading
+    self.animation_atli = self.animation_atli or {}
     print("[DEBUG] Initializing ASSET_ATLAS")
     self.ANIMATION_ATLAS = {}
     self.ASSET_ATLAS = {}
@@ -1185,6 +1179,8 @@ function Game:set_render_settings()
         self.ANIMATION_ATLAS[self.animation_atli[i].name].py = self.animation_atli[i].py
         self.ANIMATION_ATLAS[self.animation_atli[i].name].frames = self.animation_atli[i].frames
     end
+
+    self.asset_atli = self.asset_atli or {}
 
     print("[DEBUG] Loading asset_atli, count: " .. #self.asset_atli)
     for i=1, #self.asset_atli do
@@ -1229,8 +1225,8 @@ function Game:init_window(reset)
     -- WII U SPECIFIC: Adjust scale for better visibility
     if love.system.getOS() == "cafe" then  -- Wii U platform detection
         print("[WII U] Detected Wii U platform, adjusting scale")
-        self.TILESCALE = 1.5  -- Much larger scale for Wii U text visibility
-        self.TILESIZE = self.TILESIZE * 2.0  -- Much larger tile size for Wii U
+        self.TILESCALE = 1.0  -- More conservative scale for debugging
+        self.TILESIZE = self.TILESIZE * 1.0  -- Keep original tile size for debugging
     end
     
     self.WINDOWTRANS = {
@@ -1481,12 +1477,15 @@ function Game:sandbox()
 end
 
 function Game:splash_screen()
+    print("[DEBUG] Game:splash_screen() called")
     --If the skip splash screen option is set, immediately go to the main menu here
     if G.SETTINGS.skip_splash == 'Yes' then 
+        print("[DEBUG] Skipping splash screen, going to main menu")
         G:main_menu()
         return 
     end
 
+    print("[DEBUG] Continuing with splash screen initialization")
     self:prep_stage(G.STAGES.MAIN_MENU, G.STATES.SPLASH, true)
     G.E_MANAGER:add_event(Event({
         func = (function()
@@ -1499,8 +1498,9 @@ function Game:splash_screen()
       G.E_MANAGER:add_event(Event({
         trigger = 'immediate',
         func = (function()
-            G.TIMERS.TOTAL = 0
-            G.TIMERS.REAL = 0
+            print("[DEBUG] Immediate event executing - NOT resetting timers")
+            -- G.TIMERS.TOTAL = 0
+            -- G.TIMERS.REAL = 0
             --Prep the splash screen shaders for both the background(colour swirl) and the foreground(white flash), starting at black
             G.SPLASH_BACK = Sprite(-30, -13, G.ROOM.T.w+60, G.ROOM.T.h+22, G.ASSET_ATLAS["ui_1"], {x = 2, y = 0})
             G.SPLASH_BACK:define_draw_steps({{
@@ -1612,19 +1612,23 @@ function Game:splash_screen()
                     temp_del = temp_del + math.max(1/(i), math.max(0.2*(170-i)/500, 0.016))
             end
 
-            --when faded to white, spit out the 'Fool's' cards and slowly have them settle in to place
+--when faded to white, spit out the 'Fool's' cards and slowly have them settle in to place
             G.E_MANAGER:add_event(Event({trigger = 'after',delay = 2.,func = (function()
+                print("[DEBUG] *** EVENT WITH 2S DELAY IS FINALLY EXECUTING!!! ***")
+                print("[DEBUG] Event with 2s delay is executing - calling main_menu('splash')")
                 G.SPLASH_BACK:remove()
                 G.SPLASH_BACK = G.SPLASH_FRONT
                 G.SPLASH_FRONT = nil
                 G:main_menu('splash')
             return true;end)}))
+            print("[DEBUG] Added event with 2s delay to call main_menu('splash')")
         return true
     end)
     }))
 end
 
 function Game:main_menu(change_context) --True if main menu is accessed from the splash screen, false if it is skipped or accessed from the game
+    print("[DEBUG] Game:main_menu() called with change_context: " .. tostring(change_context))
     if change_context ~= 'splash' then 
         --Skip the timer to 14 seconds for all shaders that need it
         G.TIMERS.REAL = 12
@@ -2845,12 +2849,44 @@ function Game:draw()
     reset_drawhash()
     if G.OVERLAY_TUTORIAL and not G.OVERLAY_MENU then G.under_overlay = true end
     timer_checkpoint('start->canvas', 'draw')
-    love.graphics.setCanvas{self.CANVAS}
+    
+    -- Debug: Check if G.CANVAS exists
+    if not G.CANVAS then
+        print("[WII U] G.CANVAS is nil, creating emergency fallback canvas")
+        if love.graphics.newCanvas then
+            local success, canvas = pcall(love.graphics.newCanvas)
+            if success and canvas then
+                G.CANVAS = canvas
+                print("[WII U] Emergency canvas created successfully")
+            else
+                print("[WII U] Failed to create emergency canvas: " .. tostring(canvas))
+                -- Skip canvas usage entirely
+                love.graphics.setShader()
+                love.graphics.clear(0,0,0,1)
+                return
+            end
+        else
+            print("[WII U] love.graphics.newCanvas not available")
+            love.graphics.setShader()
+            love.graphics.clear(0,0,0,1)
+            return
+        end
+    end
+    
+    -- Use G.CANVAS instead of self.CANVAS
+    love.graphics.setCanvas(G.CANVAS)
     love.graphics.push()
     love.graphics.scale(G.CANV_SCALE)
     
     love.graphics.setShader()
     love.graphics.clear(0,0,0,1)
+
+    -- Debug: Check if SPLASH objects exist
+    if love.system.getOS() == "cafe" then
+        print("[WII U DEBUG] G.SPLASH_BACK: " .. tostring(G.SPLASH_BACK))
+        print("[WII U DEBUG] G.SPLASH_FRONT: " .. tostring(G.SPLASH_FRONT))  
+        print("[WII U DEBUG] G.SPLASH_LOGO: " .. tostring(G.SPLASH_LOGO))
+    end
 
     if G.SPLASH_BACK then
         if G.debug_background_toggle then
@@ -3047,23 +3083,69 @@ love.graphics.pop()
         G.ARGS.eased_cursor_pos = G.ARGS.eased_cursor_pos or {x=G.CURSOR.T.x,y=G.CURSOR.T.y, sx = G.CONTROLLER.cursor_position.x, sy = G.CONTROLLER.cursor_position.y}
         G.screenwipe_amt = G.screenwipe_amt and (0.95*G.screenwipe_amt + 0.05*((self.screenwipe and 0.4 or self.screenglitch and 0.4) or 0)) or 1
         G.SETTINGS.GRAPHICS.crt = G.SETTINGS.GRAPHICS.crt*0.3
-        G.SHADERS['CRT']:send('distortion_fac', {1.0 + 0.07*G.SETTINGS.GRAPHICS.crt/100, 1.0 + 0.1*G.SETTINGS.GRAPHICS.crt/100})
-        G.SHADERS['CRT']:send('scale_fac', {1.0 - 0.008*G.SETTINGS.GRAPHICS.crt/100, 1.0 - 0.008*G.SETTINGS.GRAPHICS.crt/100})
-        G.SHADERS['CRT']:send('feather_fac', 0.01)
-        G.SHADERS['CRT']:send('bloom_fac', G.SETTINGS.GRAPHICS.bloom - 1)
-        G.SHADERS['CRT']:send('time',400 + G.TIMERS.REAL)
-        G.SHADERS['CRT']:send('noise_fac',0.001*G.SETTINGS.GRAPHICS.crt/100)
-        G.SHADERS['CRT']:send('crt_intensity', 0.16*G.SETTINGS.GRAPHICS.crt/100)
-        G.SHADERS['CRT']:send('glitch_intensity', 0)--0.1*G.SETTINGS.GRAPHICS.crt/100 + (G.screenwipe_amt) + 1)
-        G.SHADERS['CRT']:send('scanlines', G.CANVAS:getPixelHeight()*0.75/G.CANV_SCALE)
-        G.SHADERS['CRT']:send('mouse_screen_pos', G.video_control and {love.graphics.getWidth( )/2, love.graphics.getHeight( )/2} or {G.ARGS.eased_cursor_pos.sx, G.ARGS.eased_cursor_pos.sy})
-        G.SHADERS['CRT']:send('screen_scale', G.TILESCALE*G.TILESIZE)
-        G.SHADERS['CRT']:send('hovering', 1)
-        love.graphics.setShader( G.SHADERS['CRT'])
+        
+        -- Debug: Check G.SHADERS type and content
+        print("[DEBUG] G.SHADERS type: " .. type(G.SHADERS))
+        if type(G.SHADERS) == "table" then
+            print("[DEBUG] G.SHADERS table size: " .. tostring(#G.SHADERS))
+            for k, v in pairs(G.SHADERS) do
+                print("[DEBUG] Shader key: " .. tostring(k) .. ", type: " .. type(v))
+            end
+        end
+        
+        -- Safety check for CRT shader with complete shader setup
+        if type(G.SHADERS) == "table" and G.SHADERS['CRT'] and type(G.SHADERS['CRT']) == "userdata" then
+            -- TEMPORARY FIX: Skip shader send() calls on Wii U due to missing Lua bindings
+            if love.system.getOS() == "cafe" then
+                print("[WII U] CRT shader loaded but send() not yet implemented - using fallback rendering")
+                love.graphics.setShader() -- Use default rendering
+            else
+                local success, err = pcall(function()
+                    print("[DEBUG] About to send distortion_fac to CRT shader")
+                    G.SHADERS['CRT']:send('distortion_fac', {1.0 + 0.07*G.SETTINGS.GRAPHICS.crt/100, 1.0 + 0.1*G.SETTINGS.GRAPHICS.crt/100})
+                    print("[DEBUG] Sent distortion_fac successfully")
+                    G.SHADERS['CRT']:send('scale_fac', {1.0 - 0.008*G.SETTINGS.GRAPHICS.crt/100, 1.0 - 0.008*G.SETTINGS.GRAPHICS.crt/100})
+                    print("[DEBUG] Sent scale_fac successfully")
+                    G.SHADERS['CRT']:send('feather_fac', 0.01)
+                    print("[DEBUG] Sent feather_fac successfully")
+                    G.SHADERS['CRT']:send('bloom_fac', G.SETTINGS.GRAPHICS.bloom - 1)
+                    print("[DEBUG] Sent bloom_fac successfully")
+                    G.SHADERS['CRT']:send('time',400 + G.TIMERS.REAL)
+                    print("[DEBUG] Sent time successfully")
+                    G.SHADERS['CRT']:send('noise_fac',0.001*G.SETTINGS.GRAPHICS.crt/100)
+                    print("[DEBUG] Sent noise_fac successfully")
+                    G.SHADERS['CRT']:send('crt_intensity', 0.16*G.SETTINGS.GRAPHICS.crt/100)
+                    print("[DEBUG] Sent crt_intensity successfully")
+                    G.SHADERS['CRT']:send('glitch_intensity', 0)--0.1*G.SETTINGS.GRAPHICS.crt/100 + (G.screenwipe_amt) + 1)
+                    print("[DEBUG] Sent glitch_intensity successfully")
+                
+                -- Safe canvas access
+                local scanlines = 800  -- Default value
+                if G.CANVAS and G.CANVAS.getPixelHeight then
+                    scanlines = G.CANVAS:getPixelHeight()*0.75/G.CANV_SCALE
+                end
+                G.SHADERS['CRT']:send('scanlines', scanlines)
+                
+                    G.SHADERS['CRT']:send('mouse_screen_pos', G.video_control and {love.graphics.getWidth( )/2, love.graphics.getHeight( )/2} or {G.ARGS.eased_cursor_pos.sx, G.ARGS.eased_cursor_pos.sy})
+                    G.SHADERS['CRT']:send('screen_scale', G.TILESCALE*G.TILESIZE)
+                    G.SHADERS['CRT']:send('hovering', 1)
+                end)
+                
+                if success then
+                    love.graphics.setShader(G.SHADERS['CRT'])
+                else
+                    print("[CRT SHADER ERROR]: " .. tostring(err))
+                    love.graphics.setShader() -- Fallback to default rendering
+                end
+            end
+        else
+            love.graphics.setShader() -- Fallback to default rendering
+        end
         G.SETTINGS.GRAPHICS.crt = G.SETTINGS.GRAPHICS.crt/0.3
     end
 
-        love.graphics.draw(self.CANVAS, 0, 0)
+        -- Use G.CANVAS instead of self.CANVAS
+        love.graphics.draw(G.CANVAS, 0, 0)
     love.graphics.pop()
 
     love.graphics.setCanvas()

@@ -121,7 +121,9 @@ function love.run()
 end
 
 function love.load() 
+	print("[MAIN.LUA] About to call G:start_up(), G type: " .. tostring(type(G)) .. ", G: " .. tostring(G))
 	G:start_up()
+	print("[MAIN.LUA] G:start_up() completed")
 	--Steam integration
 	local os = love.system.getOS()
 	if os == 'OS X' or os == 'Windows' then 
@@ -144,7 +146,9 @@ steam_init()
 	end
 
 	--Set the mouse to invisible immediately, this visibility is handled in the G.CONTROLLER
-	love.mouse.setVisible(false)
+	if love.mouse then
+		love.mouse.setVisible(false)
+	end
 end
 
 function love.quit()
@@ -154,15 +158,26 @@ function love.quit()
 end
 
 function love.update( dt )
+	print("[DEBUG] love.update called, dt: " .. tostring(dt) .. ", G.TIMERS.REAL: " .. tostring(G.TIMERS and G.TIMERS.REAL or "nil"))
+    if G.E_MANAGER and G.E_MANAGER.QUEUED then
+        print("[DEBUG] Event manager has " .. tostring(#G.E_MANAGER.QUEUED) .. " queued events")
+    end
 	--Perf monitoring checkpoint
     timer_checkpoint(nil, 'update', true)
     G:update(dt)
 end
 
 function love.draw()
+	print("[MAIN.LUA] love.draw() called, about to call G:draw()")
 	--Perf monitoring checkpoint
     timer_checkpoint(nil, 'draw', true)
-	G:draw()
+	if G and G.draw then
+		print("[MAIN.LUA] G and G.draw exist, calling G:draw()")
+		G:draw()
+		print("[MAIN.LUA] G:draw() completed")
+	else
+		print("[MAIN.LUA] ERROR: G or G.draw is nil - G: " .. tostring(G) .. ", G.draw: " .. tostring(G and G.draw or "nil"))
+	end
 end
 
 function love.keypressed(key)
@@ -340,8 +355,12 @@ function love.errhand(msg)
 		love.graphics.push()
 		love.graphics.clear(G.C.BLACK)
 		love.graphics.setColor(1., 1., 1., 1.)
-		love.graphics.printf(p, font, pos, pos, love.graphics.getWidth() - pos)
+		love.graphics.setFont(font)
+		-- Use print instead of printf to avoid StreamBuffer issues
+		love.graphics.print(p, pos, pos)
 		love.graphics.pop()
+		-- Make sure no render target is active before present
+		love.graphics.setCanvas()
 		love.graphics.present()
 
 	end

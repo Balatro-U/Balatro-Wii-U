@@ -87,31 +87,79 @@ function Sprite:draw_shader(_shader, _shadow_height, _send, _no_tilt, other_obj,
     if custom_shader then 
         if _send then 
             for k, v in ipairs(_send) do
-                G.SHADERS[_shader]:send(v.name, v.val or (v.func and v.func()) or v.ref_table[v.ref_value])
+                -- Safety check for shader before using it
+                if _shader and type(_shader) == "string" and G.SHADERS and G.SHADERS[_shader] and type(G.SHADERS[_shader]) == "userdata" then
+                    local success, err = pcall(function()
+                        local value = nil
+                        if v.val then
+                            value = v.val
+                        elseif v.func then
+                            value = v.func()
+                        elseif v.ref_table and v.ref_value and type(v.ref_table) == "table" then
+                            value = v.ref_table[v.ref_value]
+                        end
+                        
+                        if value ~= nil then
+                            -- TEMPORARY FIX: Skip shader send() calls on Wii U due to missing Lua bindings
+                            if love.system.getOS() == "cafe" then
+                                -- Skip send call on Wii U, just use shader without uniforms
+                            else
+                                G.SHADERS[_shader]:send(v.name, value)
+                            end
+                        end
+                    end)
+                    if not success then
+                        print("Shader send error for " .. tostring(_shader) .. ": " .. tostring(err))
+                    end
+                end
             end
         end
     elseif _shader == 'vortex' then 
-        G.SHADERS['vortex']:send('vortex_amt', G.TIMERS.REAL - (G.vortex_time or 0))
+        -- Safety check for vortex shader
+        if G.SHADERS['vortex'] and type(G.SHADERS['vortex']) == "userdata" then
+            -- Skip shader send() calls on Wii U due to missing Lua bindings
+            if love.system.getOS() ~= "cafe" then
+                G.SHADERS['vortex']:send('vortex_amt', G.TIMERS.REAL - (G.vortex_time or 0))
+            end
+        end
     else
         self.ARGS.prep_shader = self.ARGS.prep_shader or {}
         self.ARGS.prep_shader.cursor_pos = self.ARGS.prep_shader.cursor_pos or {}
         self.ARGS.prep_shader.cursor_pos[1] = _draw_major.tilt_var and _draw_major.tilt_var.mx*G.CANV_SCALE or G.CONTROLLER.cursor_position.x*G.CANV_SCALE
         self.ARGS.prep_shader.cursor_pos[2] = _draw_major.tilt_var and _draw_major.tilt_var.my*G.CANV_SCALE or G.CONTROLLER.cursor_position.y*G.CANV_SCALE
 
-        G.SHADERS[_shader or 'dissolve']:send('mouse_screen_pos', self.ARGS.prep_shader.cursor_pos)
-        G.SHADERS[_shader or 'dissolve']:send('screen_scale', G.TILESCALE*G.TILESIZE*(_draw_major.mouse_damping or 1)*G.CANV_SCALE)
-        G.SHADERS[_shader or 'dissolve']:send('hovering',((_shadow_height  and not tilt_shadow) or _no_tilt) and 0 or (_draw_major.hover_tilt or 0)*(tilt_shadow or 1))
-        G.SHADERS[_shader or 'dissolve']:send("dissolve",math.abs(_draw_major.dissolve or 0))
-        G.SHADERS[_shader or 'dissolve']:send("time",123.33412*(_draw_major.ID/1.14212 or 12.5123152)%3000)
-        G.SHADERS[_shader or 'dissolve']:send("texture_details",self:get_pos_pixel())
-        G.SHADERS[_shader or 'dissolve']:send("image_details",self:get_image_dims())
-        G.SHADERS[_shader or 'dissolve']:send("burn_colour_1",_draw_major.dissolve_colours and _draw_major.dissolve_colours[1] or G.C.CLEAR)
-        G.SHADERS[_shader or 'dissolve']:send("burn_colour_2",_draw_major.dissolve_colours and _draw_major.dissolve_colours[2] or G.C.CLEAR)
-        G.SHADERS[_shader or 'dissolve']:send("shadow",(not not _shadow_height))
-        if _send then G.SHADERS[_shader or 'dissolve']:send(_shader,_send) end
+        -- Safety check for dissolve shader
+        local shader_name = _shader or 'dissolve'
+        if G.SHADERS[shader_name] and type(G.SHADERS[shader_name]) == "userdata" then
+            -- Skip shader send() calls on Wii U due to missing Lua bindings
+            if love.system.getOS() ~= "cafe" then
+                G.SHADERS[shader_name]:send('mouse_screen_pos', self.ARGS.prep_shader.cursor_pos)
+                G.SHADERS[shader_name]:send('screen_scale', G.TILESCALE*G.TILESIZE*(_draw_major.mouse_damping or 1)*G.CANV_SCALE)
+                G.SHADERS[shader_name]:send('hovering',((_shadow_height  and not tilt_shadow) or _no_tilt) and 0 or (_draw_major.hover_tilt or 0)*(tilt_shadow or 1))
+                G.SHADERS[shader_name]:send("dissolve",math.abs(_draw_major.dissolve or 0))
+                G.SHADERS[shader_name]:send("time",123.33412*(_draw_major.ID/1.14212 or 12.5123152)%3000)
+                G.SHADERS[shader_name]:send("texture_details",self:get_pos_pixel())
+                G.SHADERS[shader_name]:send("image_details",self:get_image_dims())
+                G.SHADERS[shader_name]:send("burn_colour_1",_draw_major.dissolve_colours and _draw_major.dissolve_colours[1] or G.C.CLEAR)
+                G.SHADERS[shader_name]:send("burn_colour_2",_draw_major.dissolve_colours and _draw_major.dissolve_colours[2] or G.C.CLEAR)
+                G.SHADERS[shader_name]:send("shadow",(not not _shadow_height))
+                if _send then G.SHADERS[shader_name]:send(_shader,_send) end
+            end
+        end
     end
 
-    love.graphics.setShader( G.SHADERS[_shader or 'dissolve'],  G.SHADERS[_shader or 'dissolve'])
+    -- Set shader with safety check
+    local shader_to_use = nil
+    if G.SHADERS and G.SHADERS[_shader or 'dissolve'] and type(G.SHADERS[_shader or 'dissolve']) == "userdata" then
+        shader_to_use = G.SHADERS[_shader or 'dissolve']
+    end
+    
+    if shader_to_use and type(shader_to_use) == "userdata" then
+        love.graphics.setShader(shader_to_use)
+    else
+        -- Fallback: no shader if not available
+        love.graphics.setShader()
+    end
 
     if other_obj then 
         self:draw_from(other_obj, ms, mr, mx, my)

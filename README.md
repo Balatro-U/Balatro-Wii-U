@@ -1,28 +1,57 @@
-# Balatro U
-![image](WiiU.png)
 
-This is a port of Balatro for the Wii U for Aroma made using my [fork](https://github.com/xtomasnemec/lovepotion/tree/3.1.0-development) of LovePotion
+# Balatro Wii U (Aroma Port)
+![Wii U Banner](WiiU.png)
 
-## Compiling
+This is an unofficial port of **Balatro** for the Wii U (Aroma) using my [custom LovePotion fork](https://github.com/xtomasnemec/lovepotion/tree/3.1.0-development).
 
-### Windows
+---
 
-- Clone this repo
-- Run `build.bat`
-- Choose option `1`
-  - > [!IMPORTANT]
-        > You'll have to set up Docker and/or WSL yourself if you didn't allready have it installed
-- Choose option `2` (You have to provide your own `Balatro.exe` (It has to be installed through Steam or in the same folder as the script))
-- Choose option `3` (This will take a long time, even on a fast PC)
-- Drag and drop the contents of `to sdcard` to your SD Card
-- Run the game from your home menu
-- Profit
-- ???
-### Linux
-- TO DO
+## Features
+- Runs natively on Wii U via Aroma
+- Based on the official Steam version of Balatro
+- Easy automated build process (Windows)
+
+---
+
+## Requirements
+- Windows 10/11 (Linux: WIP)
+- A *legal* copy of **Balatro** (Steam version)
+
+---
+
+## Quick Start (Windows)
+1. **Clone this repository**
+2. **Run** `build.bat`
+3. **Select** option `1` to install dependencies
+   - _Note: You may need to set up Docker manually if not already installed_
+4. **Select** option `2` to extract game files
+   - Place your `Balatro.exe` (Steam version) in the repo folder, or ensure it is installed via Steam
+5. **Select** option `3` to build the game _(this may take a while)_
+6. **Select** option `4` to clean up build files (optional)
+7. **Copy** the contents of the `to sdcard` folder to your SD card
+8. **Insert SD card** into your Wii U and launch the game from the home menu
+9. **Profit**
+10. **???**
+
+---
+
+## Troubleshooting
+- **Hash mismatch?**
+  - Only the official Steam version (1.0.1o-Full) of Balatro is tested.
+- **Missing dependencies?**
+  - Use option 1 in `build.bat` to install those dependencies automatically.
+- **Build fails or is slow?**
+  - Building can take a long time, even my PC takes 3 minutes to build.
+
+---
+
+## Linux Support
+_Not yet implemented. Contributions welcome!_
+
+---
 
 ## Credits
-- Banner and icons from [Rodrick_](https://github.com/rodrickhmmm)
-- The original game from [LocalThunk](https://localthunk.com/)
-- [DevkitPRO](https://devkitpro.org/)
-- The [LovePotion](https://lovebrew.org/) project
+- Banner and icons: [Rodrick_](https://github.com/rodrickhmmm)
+- Original game: [LocalThunk](https://localthunk.com/) (pls don't sue me)
+- [devkitPro](https://devkitpro.org/)
+- [LovePotion](https://lovebrew.org/)
