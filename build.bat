@@ -328,7 +328,7 @@ xcopy "%WUHBSRC%" "%BUILD_DIR%\" /E /Y /I
 for %%F in ("%BUILD_DIR%\balatro.wuhb") do set "WUHBSIZE2=%%~zF"
 echo Size of balatro.wuhb in %BUILD_DIR%: %WUHBSIZE2% bytes
 
-::cls
+cls
 echo ================================
 echo Build complete!
 echo ================================

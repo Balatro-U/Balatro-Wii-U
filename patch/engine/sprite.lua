@@ -98,14 +98,8 @@ function Sprite:draw_shader(_shader, _shadow_height, _send, _no_tilt, other_obj,
                         elseif v.ref_table and v.ref_value and type(v.ref_table) == "table" then
                             value = v.ref_table[v.ref_value]
                         end
-                        
                         if value ~= nil then
-                            -- TEMPORARY FIX: Skip shader send() calls on Wii U due to missing Lua bindings
-                            if love.system.getOS() == "cafe" then
-                                -- Skip send call on Wii U, just use shader without uniforms
-                            else
-                                G.SHADERS[_shader]:send(v.name, value)
-                            end
+                            G.SHADERS[_shader]:send(v.name, value)
                         end
                     end)
                     if not success then
@@ -117,10 +111,9 @@ function Sprite:draw_shader(_shader, _shadow_height, _send, _no_tilt, other_obj,
     elseif _shader == 'vortex' then 
         -- Safety check for vortex shader
         if G.SHADERS['vortex'] and type(G.SHADERS['vortex']) == "userdata" then
-            -- Skip shader send() calls on Wii U due to missing Lua bindings
-            if love.system.getOS() ~= "cafe" then
+            pcall(function()
                 G.SHADERS['vortex']:send('vortex_amt', G.TIMERS.REAL - (G.vortex_time or 0))
-            end
+            end)
         end
     else
         self.ARGS.prep_shader = self.ARGS.prep_shader or {}
@@ -131,8 +124,7 @@ function Sprite:draw_shader(_shader, _shadow_height, _send, _no_tilt, other_obj,
         -- Safety check for dissolve shader
         local shader_name = _shader or 'dissolve'
         if G.SHADERS[shader_name] and type(G.SHADERS[shader_name]) == "userdata" then
-            -- Skip shader send() calls on Wii U due to missing Lua bindings
-            if love.system.getOS() ~= "cafe" then
+            pcall(function()
                 G.SHADERS[shader_name]:send('mouse_screen_pos', self.ARGS.prep_shader.cursor_pos)
                 G.SHADERS[shader_name]:send('screen_scale', G.TILESCALE*G.TILESIZE*(_draw_major.mouse_damping or 1)*G.CANV_SCALE)
                 G.SHADERS[shader_name]:send('hovering',((_shadow_height  and not tilt_shadow) or _no_tilt) and 0 or (_draw_major.hover_tilt or 0)*(tilt_shadow or 1))
@@ -144,7 +136,7 @@ function Sprite:draw_shader(_shader, _shadow_height, _send, _no_tilt, other_obj,
                 G.SHADERS[shader_name]:send("burn_colour_2",_draw_major.dissolve_colours and _draw_major.dissolve_colours[2] or G.C.CLEAR)
                 G.SHADERS[shader_name]:send("shadow",(not not _shadow_height))
                 if _send then G.SHADERS[shader_name]:send(_shader,_send) end
-            end
+            end)
         end
     end
 

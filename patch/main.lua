@@ -1,4 +1,8 @@
 
+-- Explicitly require love modules first
+require("love.graphics")
+require("love.window")
+
 require "engine/object"
 require "bit"
 require "engine/string_packer"
@@ -56,6 +60,14 @@ function love.run()
 		
 		run_time = love.timer.getTime()
 		-- Process events.
+		if love.event then
+			print("[MAIN.LUA] G.CONTROLLER exists: " .. tostring(G and G.CONTROLLER ~= nil))
+			if G and G.CONTROLLER then
+				print("[MAIN.LUA] Pumping events...")
+			else
+				print("[MAIN.LUA] Skipping event pumping - no G.CONTROLLER")
+			end
+		end
 		if love.event and G and G.CONTROLLER then
 			love.event.pump()
 			local _n,_a,_b,_c,_d,_e,_f,touched
@@ -100,9 +112,10 @@ function love.run()
 			end
 		end
 
-		if love.graphics and love.graphics.isActive() then
+		-- Always present frames when graphics exists; isActive() may be unreliable on Wii U
+		if love.graphics then
 			if frame_count <= 10 then
-				print("[MAIN.LUA] Graphics active, calling love.draw()")
+				print("[MAIN.LUA] Graphics available, calling love.draw()")
 			end
 			if love.draw then love.draw() end
 			if frame_count <= 10 then

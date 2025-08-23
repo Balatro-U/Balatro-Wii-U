@@ -74,7 +74,7 @@ function Game:set_globals()
         self.F_CTA = false
         self.F_VERBOSE = true
         self.F_NO_ACHIEVEMENTS = true
-        self.F_ENGLISH_ONLY = nil
+        self.F_ENGLISH_ONLY = true
         self.F_SOUND_THREAD = false 
         self.F_NO_ERROR_HAND = false 
         self.F_HTTP_SCORES = false

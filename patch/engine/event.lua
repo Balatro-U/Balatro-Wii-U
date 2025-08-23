@@ -173,12 +173,12 @@ function EventManager:update(dt, forced)
     if self.queue_timer >= self.queue_last_processed + self.queue_dt or forced then 
         self.queue_last_processed = self.queue_last_processed + (forced and 0 or self.queue_dt)
         
-        -- Debug: Show queue status
+        -- Debug: Show queue status (throttled)
         local total_events = 0
         for k, v in pairs(self.queues) do
             total_events = total_events + #v
         end
-        if total_events > 0 and G.TIMERS.REAL > 1 then  -- Only log after 1 second to avoid spam
+        if total_events > 0 and G.TIMERS.REAL > 1 and math.floor(G.TIMERS.REAL*10)%5==0 then  -- Only log ~2x per second
             print("[DEBUG] EventManager:update - Total events in queues: " .. total_events)
         end
         
@@ -189,7 +189,19 @@ function EventManager:update(dt, forced)
                 G.ARGS.event_manager_update = G.ARGS.event_manager_update or {}
                 local results = G.ARGS.event_manager_update
                 results.blocking, results.completed, results.time_done, results.pause_skip = false, false, false, false
-                if (not blocked or not v[i].blockable) then v[i]:handle(results) end
+                if (not blocked or not v[i].blockable) then 
+                    -- Splash timing trace
+                    if v[i].trigger == 'after' and v[i].delay and v[i].timer == 'REAL' and v[i].func then
+                        if G.TIMERS and G.TIMERS.REAL then
+                            local start_t = v[i].time or 0
+                            local now_t = G.TIMERS.REAL
+                            if math.abs((start_t + v[i].delay) - now_t) < 0.05 then
+                                print(string.format('[DEBUG] after-event near fire: start=%.3f delay=%.3f now=%.3f timer=%s', start_t, v[i].delay, now_t, v[i].timer))
+                            end
+                        end
+                    end
+                    v[i]:handle(results) 
+                end
                 if results.pause_skip then 
                     i = i + 1
                 else if not blocked and results.blocking then blocked = true end
