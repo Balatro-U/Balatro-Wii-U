@@ -25,7 +25,7 @@ function menu() {
             3) build ;;
             4) clean ;;
             0) exit 0 ;;
-            *) continue ;;
+            *) echo "Invalid option. Try again."; sleep 1 ;;
         esac
     done
 }
@@ -63,7 +63,6 @@ function install_deps() {
     echo "- Git"
     echo
     read -n 1 -s -r -p "Press any key to continue..."
-    menu
 }
 
 function extract() {
@@ -81,7 +80,6 @@ function extract() {
         echo "Please copy Balatro.exe to this folder."
         echo
         read -n 1 -s -r -p "Press any key to continue..."
-        menu
         return
     fi
 
@@ -101,7 +99,6 @@ function extract() {
         echo "ERROR: Failed to extract Balatro.exe"
         echo "Make sure the file is not corrupted"
         read -n 1 -s -r -p "Press any key to continue..."
-        menu
         return
     fi
 
@@ -113,7 +110,6 @@ function extract() {
     echo "Game files extracted to: game/"
     echo
     read -n 1 -s -r -p "Press any key to continue..."
-    menu
 }
 
 function build() {
@@ -132,7 +128,6 @@ function build() {
         echo "ERROR: Failed to clone Lovepotion repository."
         echo "Make sure Git is installed and working."
         read -n 1 -s -r -p "Press any key to continue..."
-        menu
         return
     fi
     cd "$(dirname "$0")"
@@ -148,7 +143,6 @@ function build() {
     if [[ ! -f "$WUHBSRC" ]]; then
         echo "ERROR: balatro.wuhb not found in $WUHBSRC."
         read -n 1 -s -r -p "Press any key to continue..."
-        menu
         return
     fi
     WUHBSIZE=$(stat -c%s "$WUHBSRC")
@@ -165,7 +159,6 @@ function build() {
     echo "Build complete!"
     echo "==============================="
     read -n 1 -s -r -p "Press any key to continue..."
-    menu
 }
 
 function clean() {
@@ -178,7 +171,6 @@ function clean() {
     echo "Build directory cleaned."
     echo "Temporary files cleaned."
     read -n 1 -s -r -p "Press any key to continue..."
-    menu
 }
 
 menu
