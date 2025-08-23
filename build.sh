@@ -6,26 +6,28 @@ BUILD_DIR="$ROOT_BUILD_DIR/wiiu/apps/Balatro"
 OUTPUT_NAME="Balatro U"
 PKGS="git p7zip"
 function menu() {
-    clear
-    echo "==============================="
-    echo "   Balatro Wii U Builder"
-    echo "==============================="
-    echo "1. Install dependencies"
-    echo "2. Extract files"
-    echo "3. Build"
-    echo "4. Clean"
-    echo "0. Exit"
-    echo "==============================="
-    read -p "Select build mode (0-4): " BUILD_MODE
+    while true; do
+        clear
+        echo "==============================="
+        echo "   Balatro Wii U Builder"
+        echo "==============================="
+        echo "1. Install dependencies"
+        echo "2. Extract files"
+        echo "3. Build"
+        echo "4. Clean"
+        echo "0. Exit"
+        echo "==============================="
+        read -p "Select build mode (0-4): " BUILD_MODE
 
-    case "$BUILD_MODE" in
-        1) install_deps ;;
-        2) extract ;;
-        3) build ;;
-        4) clean ;;
-        0) exit 0 ;;
-        *) menu ;;
-    esac
+        case "$BUILD_MODE" in
+            1) install_deps ;;
+            2) extract ;;
+            3) build ;;
+            4) clean ;;
+            0) exit 0 ;;
+            *) continue ;;
+        esac
+    done
 }
 
 function install_deps() {
