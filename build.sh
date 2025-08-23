@@ -1,34 +1,16 @@
 #!/bin/bash
 
+# Check if running interactively
+if [[ ! -t 0 ]]; then
+    echo "This script requires an interactive terminal. Please run it directly."
+    exit 1
+fi
+
 # Configuration
 ROOT_BUILD_DIR="$(dirname "$0")/to sdcard"
 BUILD_DIR="$ROOT_BUILD_DIR/wiiu/apps/Balatro"
 OUTPUT_NAME="Balatro U"
 PKGS="git p7zip"
-function menu() {
-    while true; do
-        clear
-        echo "==============================="
-        echo "   Balatro Wii U Builder"
-        echo "==============================="
-        echo "1. Install dependencies"
-        echo "2. Extract files"
-        echo "3. Build"
-        echo "4. Clean"
-        echo "0. Exit"
-        echo "==============================="
-        read -p "Select build mode (0-4): " BUILD_MODE
-
-        case "$BUILD_MODE" in
-            1) install_deps ;;
-            2) extract ;;
-            3) build ;;
-            4) clean ;;
-            0) exit 0 ;;
-            *) echo "Invalid option. Try again."; sleep 1 ;;
-        esac
-    done
-}
 
 function install_deps() {
     clear
@@ -161,16 +143,9 @@ function build() {
     read -n 1 -s -r -p "Press any key to continue..."
 }
 
-function clean() {
-    clear
-    echo "==============================="
-    echo "Cleaning..."
-    echo "==============================="
-    rm -rf "$ROOT_BUILD_DIR"
-    rm -rf "$(dirname "$0")/temp"
-    echo "Build directory cleaned."
-    echo "Temporary files cleaned."
-    read -n 1 -s -r -p "Press any key to continue..."
-}
+# End of script
+install_deps
+extract
+build
 
-menu
+exit 0
