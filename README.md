@@ -6,6 +6,10 @@ This is an unofficial port of **Balatro** for the Wii U (Aroma) using my [custom
 
 ---
 
+> [!WARNING]  
+> The game is still in development, see [#2](https://github.com/xtomasnemec/Balatro-Wii-U/issues/2)
+
+
 ## Features
 - Runs natively on Wii U via Aroma
 - Based on the official Steam version of Balatro
@@ -42,7 +46,9 @@ This is an unofficial port of **Balatro** for the Wii U (Aroma) using my [custom
   - Use option 1 in `build.bat` to install those dependencies automatically.
 - **Build fails or is slow?**
   - Building can take a long time, even my PC takes 3 minutes to build.
-
+- **Docker is not supported on my PC**
+  - Try compiling it in Linux (when the Linux support is done)
+  - Or compile it at your friend's house ¯\\_\(ツ)\_/¯
 ---
 
 ## Linux Support
