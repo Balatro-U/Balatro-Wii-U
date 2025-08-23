@@ -11,7 +11,7 @@ cls
 :: Configuration
 SET "ROOT_BUILD_DIR=%~dp0to sdcard"
 SET "BUILD_DIR=%~dp0to sdcard\wiiu\apps\Balatro"
-SET "OUTPUT_NAME=Balatro_WiiU"
+SET "OUTPUT_NAME=Balatro U"
 
 :MENU
 cls
