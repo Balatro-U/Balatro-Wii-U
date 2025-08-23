@@ -41,15 +41,11 @@ This is an unofficial port of **Balatro** for the Wii U (Aroma) using my [custom
 
 ## Quick Start (Linux)
 1. `curl -sSL https://raw.githubusercontent.com/xtomasnemec/Balatro-Wii-U/main/install.sh | sudo bash`
-2. **Select** option `1` to install dependencies
-3. **Select** option `2` to extract game files
-   - Place your `Balatro.exe` (Steam version) in the repo folder
-4. **Select** option `3` to build the game _(this may take a while)_
-5. **Select** option `4` to clean up build files (optional)
-6. **Copy** the contents of the `to sdcard` folder to your SD card
-7. **Insert SD card** into your Wii U and launch the game from the home menu
-8. **Profit**
-9.  **???**
+2. Place your `Balatro.exe` (Steam version) in the repo folder
+1. **Copy** the contents of the `to sdcard` folder to your SD card
+2. **Insert SD card** into your Wii U and launch the game from the home menu
+3. **Profit**
+4.  **???**
 ---
 
 ## Troubleshooting

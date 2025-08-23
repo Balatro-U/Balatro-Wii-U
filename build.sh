@@ -48,6 +48,7 @@ function install_deps() {
 }
 
 function extract() {
+    read -n 1 -s -r -p "Press any key to continue... (only after you copied Balatro.exe)"
     clear
     echo "==============================="
     echo "Extracting needed files from Balatro..."
