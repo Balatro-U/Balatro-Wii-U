@@ -68,8 +68,8 @@ This is an unofficial port of **Balatro** for the Wii U (Aroma) using my [custom
 4. **Select** option `2` to extract game files
    - Place your `Balatro.exe` (Steam version) in the repo folder, or ensure it is installed via Steam
 5. **Select** option `3` and then `1` to build the game _(this may take a while)_
-   >[!NOTE]
-   >If your PC can't run docker use option `3` and then `2` (the precompiled binary is downloaded from [here](https://github.com/xtomasnemec/Balatro-U-precompiled/tree/main))
+> [!NOTE] 
+> If your PC can't run docker use option `3` and then `2` (the precompiled binary is downloaded from [here](https://github.com/xtomasnemec/Balatro-U-precompiled/tree/main))
 6. **Select** option `4` to clean up build files (optional)
 7. **Copy** the contents of the `to sdcard` folder to your SD card
 8. **Insert SD card** into your Wii U and launch the game from the home menu
