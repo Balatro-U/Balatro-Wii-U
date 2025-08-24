@@ -44,7 +44,6 @@ function install_deps() {
     echo "Components that should be installed:"
     echo "- Git"
     echo
-    read -n 1 -s -r -p "Press any key to continue..."
 }
 
 function extract() {
@@ -92,7 +91,6 @@ function extract() {
     echo
     echo "Game files extracted to: game/"
     echo
-    read -n 1 -s -r -p "Press any key to continue..."
 }
 
 function build() {

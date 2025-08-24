@@ -29,7 +29,7 @@ set /p BUILD_MODE="Select build mode (0-4): "
 
 if "%BUILD_MODE%"=="1" goto :INSTALL_DEPS
 if "%BUILD_MODE%"=="2" goto :Extract
-if "%BUILD_MODE%"=="3" goto :Build
+if "%BUILD_MODE%"=="3" goto :Build_menu
 if "%BUILD_MODE%"=="4" (
     cls
     echo ================================
@@ -48,6 +48,22 @@ if "%BUILD_MODE%"=="4" (
 )
 if "%BUILD_MODE%"=="0" exit
 goto :MENU
+
+:Build_menu
+cls
+:: Build mode selection
+echo ================================
+echo    Balatro Wii U Builder
+echo ================================
+echo 1. Build using Docker
+echo 2. Build using a precompiled binary
+echo 0. Back
+echo ================================
+set /p BUILD="Select build mode (0-2): "
+
+if "%BUILD%"=="1" goto :Build
+if "%BUILD%"=="2" goto :Build_precompiled
+if "%BUILD%"=="0" goto :MENU
 
 :INSTALL_DEPS
 cls
@@ -279,6 +295,54 @@ echo.
 echo Game files extracted to: game\
 echo.
 
+pause
+goto :MENU
+
+:Build_precompiled
+cls
+echo ================================
+echo Building with a precompiled binary...
+echo ================================
+rmdir /s /q "%ROOT_BUILD_DIR%"
+rmdir /s /q "%~dp0temp"
+echo Build directory cleaned.
+mkdir "%~dp0temp"
+cd /d "%~dp0temp"
+wget https://github.com/xtomasnemec/Balatro-U-precompiled/raw/refs/heads/main/lovepotion.wuhb
+cd /d "%~dp0"
+echo Patching the game files...
+xcopy "%~dp0game\*" "%~dp0temp\game\" /E /Y /I
+xcopy "%~dp0patch\*" "%~dp0temp\game\" /E /Y /I
+cd /d "%~dp0temp"
+echo Fusing lovepotion.wuhb and game.love...
+7z a -r game.zip ./game/*
+mv game.zip game.love
+copy /b lovepotion.wuhb+game.love balatro.wuhb
+cd /d "%~dp0"
+
+:: Check existence and size of balatro.wuhb
+set "WUHBSRC=%~dp0temp\balatro.wuhb"
+if not exist "%WUHBSRC%" (
+    echo ERROR: balatro.wuhb not found in %WUHBSRC%.
+    pause
+    goto :MENU
+)
+for %%F in ("%WUHBSRC%") do set "WUHBSIZE=%%~zF"
+echo Size of balatro.wuhb after build: %WUHBSIZE% bytes
+
+:: Copy built file(s) to build dir
+echo Copying built files to %BUILD_DIR%...
+if not exist "%BUILD_DIR%" (
+    mkdir "%BUILD_DIR%"
+)
+xcopy "%WUHBSRC%" "%BUILD_DIR%\" /E /Y /I
+for %%F in ("%BUILD_DIR%\balatro.wuhb") do set "WUHBSIZE2=%%~zF"
+echo Size of balatro.wuhb in %BUILD_DIR%: %WUHBSIZE2% bytes
+
+cls
+echo ================================
+echo Build complete!
+echo ================================
 pause
 goto :MENU
 

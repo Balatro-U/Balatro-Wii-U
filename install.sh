@@ -11,6 +11,4 @@ fi
 
 sudo rm -rf Balatro-Wii-U
 git clone https://github.com/xtomasnemec/Balatro-Wii-U.git
-cd Balatro-Wii-U
-sudo chmod +x ./build.sh
-./build.sh
+sudo chmod +x ./Balatro-Wii-U/build.sh

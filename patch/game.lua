@@ -1440,11 +1440,17 @@ function Game:sandbox()
 end
 
 function Game:splash_screen()
+    print("[DEBUG] splash_screen() called")
+    print("[DEBUG] G.SETTINGS.skip_splash: " .. tostring(G.SETTINGS.skip_splash))
+    
     --If the skip splash screen option is set, immediately go to the main menu here
     if G.SETTINGS.skip_splash == 'Yes' then 
+        print("[DEBUG] Skipping splash screen due to settings")
         G:main_menu()
         return 
     end
+
+    print("[DEBUG] Starting splash screen animation")
 
     self:prep_stage(G.STAGES.MAIN_MENU, G.STATES.SPLASH, true)
     G.E_MANAGER:add_event(Event({
@@ -1581,13 +1587,15 @@ function Game:splash_screen()
 --when faded to white, spit out the 'Fool's' cards and slowly have them settle in to place
             G.E_MANAGER:add_event(Event({
                 trigger = 'after',
-                delay = 2.,
-                blocking = false,
+                delay = 13.,  -- Increased from 2 to 6 seconds to allow all card animations to complete
+                blocking = true,  -- Make this blocking to ensure proper timing
                 blockable = false,
                 func = (function()
+                print("[DEBUG] Splash screen ending, removing splash sprites")
                 G.SPLASH_BACK:remove()
                 G.SPLASH_BACK = G.SPLASH_FRONT
                 G.SPLASH_FRONT = nil
+                print("[DEBUG] Calling main_menu with 'splash' context")
                 G:main_menu('splash')
             return true;end)}), 'other', true)
         return true
