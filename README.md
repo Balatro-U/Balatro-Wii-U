@@ -107,6 +107,7 @@ sudo ./Balatro-Wii-U/build.sh
 ---
 
 ## Credits
+- Development: [xtomasnemec](https://github.com/xtomasnemec)
 - Banner and icons: [Rodrick_](https://github.com/rodrickhmmm)
 - Original game: [LocalThunk](https://localthunk.com/) (pls don't sue me)
 - [devkitPro](https://devkitpro.org/)
