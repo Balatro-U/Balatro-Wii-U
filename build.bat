@@ -10,7 +10,8 @@ cls
 
 :: Configuration
 SET "ROOT_BUILD_DIR=%~dp0to sdcard"
-SET "BUILD_DIR=%~dp0to sdcard\wiiu\apps\Balatro"
+SET "BUILD_DIR=%~dp0to sdcard\wiiu\apps\balatro"
+SET "GLSLDIR=%~dp0to sdcard\wiiu\apps\balatro"
 SET "OUTPUT_NAME=Balatro U"
 
 :MENU
@@ -47,7 +48,11 @@ if "%BUILD_MODE%"=="4" (
     goto :MENU
 )
 if "%BUILD_MODE%"=="0" exit
-goto :MENU
+else (
+    echo Invalid selection. Please try again.
+    pause
+    goto :MENU
+)
 
 :Build_menu
 cls
@@ -61,9 +66,34 @@ echo 0. Back
 echo ================================
 set /p BUILD="Select build mode (0-2): "
 
-if "%BUILD%"=="1" goto :Build
+if "%BUILD%"=="1" goto :Build_select
 if "%BUILD%"=="2" goto :Build_precompiled
 if "%BUILD%"=="0" goto :MENU
+else (
+    echo Invalid selection. Please try again.
+    pause
+    goto :Build_menu
+)
+
+:Build_select
+cls
+echo ================================
+echo    Balatro Wii U Builder
+echo ================================
+echo 1. Build Release
+echo 2. Build Debug
+echo 0. Back
+echo ================================
+set /p BUILD="Select build mode (0-2): "
+if "%BUILD%"=="1" SET "Type=Release" & goto :Build
+if "%BUILD%"=="2" SET "Type=Debug" & goto :Build
+if "%BUILD%"=="0" goto :Build_menu
+else (
+    echo Invalid selection. Please try again.
+    pause
+    goto :Build_select
+)
+
 
 :INSTALL_DEPS
 cls
@@ -98,7 +128,8 @@ if errorlevel 1 (
 
 :: Install 7-Zip for archive extraction
 echo Installing 7-Zip...
-winget install -e --id 7zip.7zip --silent --accept-package-agreements --accept-source-agreements 2>nul
+winget install 7z --silent --accept-package-agreements --accept-source-agreements 2>nul
+set PATH=%PATH%;C:\Program Files\7-Zip\
 if errorlevel 1 (
     echo WARNING: 7-Zip installation failed or already installed
 )
@@ -210,7 +241,6 @@ for /f "tokens=2*" %%a in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\V
         )
         goto :EXTRACT_FILES
     )
-}
 :: Alternative registry path
 for /f "tokens=2*" %%a in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Valve\Steam" /v "InstallPath" 2^>nul') do (
     if exist "%%b\steamapps\common\Balatro\Balatro.exe" (
@@ -278,7 +308,7 @@ if not exist "%~dp0game" (
     rmdir /s /q "%~dp0game" 2>nul
     mkdir "%~dp0game"
 )
-7z x "%BALATRO_PATH%" -o"%~dp0game" -y
+"C:\Program Files\7-Zip\7z.exe" x "%BALATRO_PATH%" -o"%~dp0game" -y
 
 if errorlevel 1 (
     echo ERROR: Failed to extract Balatro.exe
@@ -335,9 +365,15 @@ echo Copying built files to %BUILD_DIR%...
 if not exist "%BUILD_DIR%" (
     mkdir "%BUILD_DIR%"
 )
+if not exist "%GLSLDIR%" (
+    mkdir "%GLSLDIR%"
+)
+
 xcopy "%WUHBSRC%" "%BUILD_DIR%\" /E /Y /I
 for %%F in ("%BUILD_DIR%\balatro.wuhb") do set "WUHBSIZE2=%%~zF"
 echo Size of balatro.wuhb in %BUILD_DIR%: %WUHBSIZE2% bytes
+cd "%GLSLDIR%"
+curl -L -o glslcompiler.rpl https://github.com/Exzap/CafeGLSL/releases/download/v0.2.0/glslcompiler.rpl
 
 cls
 echo ================================
@@ -370,7 +406,7 @@ xcopy "%~dp0game\*" "%~dp0temp\lovepotion\game\" /E /Y /I
 xcopy "%~dp0patch\*" "%~dp0temp\lovepotion\game\" /E /Y /I
 cd /d "%~dp0temp\lovepotion"
 echo Building Lovepotion...
-call build.bat
+call build.bat %Type%
 cd /d "%~dp0"
 
 :: Check existence and size of balatro.wuhb
@@ -388,9 +424,15 @@ echo Copying built files to %BUILD_DIR%...
 if not exist "%BUILD_DIR%" (
     mkdir "%BUILD_DIR%"
 )
+if not exist "%GLSLDIR%" (
+    mkdir "%GLSLDIR%"
+)
+
 xcopy "%WUHBSRC%" "%BUILD_DIR%\" /E /Y /I
 for %%F in ("%BUILD_DIR%\balatro.wuhb") do set "WUHBSIZE2=%%~zF"
 echo Size of balatro.wuhb in %BUILD_DIR%: %WUHBSIZE2% bytes
+cd "%GLSLDIR%"
+curl -L -o glslcompiler.rpl https://github.com/Exzap/CafeGLSL/releases/download/v0.2.0/glslcompiler.rpl
 
 cls
 echo ================================
