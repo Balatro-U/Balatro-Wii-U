@@ -345,9 +345,9 @@ xcopy "%~dp0game\*" "%~dp0temp\game\" /E /Y /I
 xcopy "%~dp0patch\*" "%~dp0temp\game\" /E /Y /I
 cd /d "%~dp0temp"
 echo Fusing lovepotion.wuhb and game.love...
-7z a -r game.zip ./game/*
-mv game.zip game.love
-copy /b lovepotion.wuhb+game.love balatro.wuhb
+cmd /c "C:\Program Files\7zip\7z.exe" a -r game.zip ./game/*
+move game.zip game.love
+copy /b "%~dp0\lovepotion.wuhb"+game.love "%~dp0temp\balatro.wuhb"
 cd /d "%~dp0"
 
 :: Check existence and size of balatro.wuhb
