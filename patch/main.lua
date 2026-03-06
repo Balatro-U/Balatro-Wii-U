@@ -32,13 +32,51 @@ require "engine/particles"
 require "engine/text"
 require "challenges"
 
+-- Simple Wii U file logger so we can see Lua-side progress in simple_debug.log
+local function wiiu_log(msg)
+	local ok, f = pcall(io.open, "/vol/external01/wiiu/apps/balatro/simple_debug.log", "a")
+	if ok and f then
+		f:write("[LUA] ", tostring(msg), "\n")
+		f:flush()
+		f:close()
+	end
+end
+
+-- Mirror print() to the same log so we don't lose early messages
+local _orig_print = print
+print = function(...)
+	local parts = {}
+	for i = 1, select('#', ...) do parts[i] = tostring(select(i, ...)) end
+	local line = table.concat(parts, "\t")
+	wiiu_log(line)
+	if _orig_print then _orig_print(line) end
+end
+
+-- Wii U: temporarily disable custom shaders to rule out shader issues
+if love and love.graphics and love.system and love.system.getOS() == 'cafe' then
+	local lg = love.graphics
+	local _orig_setShader = lg.setShader
+	lg.setShader = function(shader)
+		wiiu_log("[WIIU DEBUG] setShader overridden, ignoring shader: " .. tostring(shader))
+		return _orig_setShader(nil)
+	end
+end
+
 math.randomseed( G.SEED )
 
 function love.run()
 	print("[MAIN.LUA] love.run() function starting")
 	if love.load then 
 		print("[MAIN.LUA] About to call love.load()")
-		love.load(love.arg.parseGameArguments(arg), arg) 
+		local ok, err = xpcall(function()
+			love.load(love.arg.parseGameArguments(arg), arg)
+		end, debug.traceback)
+		if not ok then
+			print("[MAIN.LUA] ERROR in love.load: ", err)
+			wiiu_log("[CRASH] love.load failed: " .. tostring(err))
+			if love.errhand then love.errhand(err) end
+			return function() return 0 end
+		end
 		print("[MAIN.LUA] love.load() completed")
 	end
 
@@ -106,7 +144,13 @@ function love.run()
 			if frame_count <= 10 then
 				print("[MAIN.LUA] Calling love.update() with dt_smooth=" .. string.format("%.4f", dt_smooth))
 			end
-			love.update(dt_smooth) -- will pass 0 if love.timer is disabled
+			local ok, err = xpcall(function() love.update(dt_smooth) end, debug.traceback)
+			if not ok then
+				print("[MAIN.LUA] ERROR in love.update: ", err)
+				wiiu_log("[CRASH] love.update failed: " .. tostring(err))
+				if love.errhand then love.errhand(err) end
+				return 0
+			end
 			if frame_count <= 10 then
 				print("[MAIN.LUA] love.update() completed")
 			end
@@ -117,7 +161,15 @@ function love.run()
 			if frame_count <= 10 then
 				print("[MAIN.LUA] Graphics available, calling love.draw()")
 			end
-			if love.draw then love.draw() end
+			if love.draw then 
+				local ok, err = xpcall(function() love.draw() end, debug.traceback)
+				if not ok then
+					print("[MAIN.LUA] ERROR in love.draw: ", err)
+					wiiu_log("[CRASH] love.draw failed: " .. tostring(err))
+					if love.errhand then love.errhand(err) end
+					return 0
+				end
+			end
 			if frame_count <= 10 then
 				print("[MAIN.LUA] About to call love.graphics.present()")
 			end
@@ -182,8 +234,23 @@ end
 
 function love.draw()
 	print("[MAIN.LUA] love.draw() called, about to call G:draw()")
+
+	-- Krátký diagnostický overlay na začátku, ale vždy voláme G:draw().
+	G.__diag_frames = (G.__diag_frames or 0) + 1
+	if G.__diag_frames <= 60 and love.graphics then
+		local lg = love.graphics
+		lg.setShader() -- jistota, že používáme default shader
+		lg.clear(0.1, 0.1, 0.12, 1.0)
+		lg.setColor(1.0, 0.2, 0.2, 1.0)
+		lg.rectangle("fill", 20, 20, 120, 80)
+		lg.setColor(0.2, 0.8, 0.2, 1.0)
+		lg.rectangle("line", 180, 20, 200, 120)
+		lg.setColor(0.2, 0.4, 1.0, 1.0)
+		lg.rectangle("fill", 420, 40, 60, 60)
+		lg.setColor(1.0, 1.0, 1.0, 1.0)
+	end
 	--Perf monitoring checkpoint
-    timer_checkpoint(nil, 'draw', true)
+	timer_checkpoint(nil, 'draw', true)
 	if G and G.draw then
 		print("[MAIN.LUA] G and G.draw exist, calling G:draw()")
 		G:draw()
@@ -258,7 +325,7 @@ function love.errhand(msg)
 	print("[ERROR HANDLER] Stack trace: " .. debug.traceback())
 	
 	-- ADDITIONAL FILE LOGGING for Wii U
-	local logFile = io.open("fs:/vol/external01/simple_debug.log", "a")
+	local logFile = io.open("/vol/external01/wiiu/apps/balatro/simple_debug.log", "a")
 	if logFile then
 		logFile:write("[ERROR HANDLER] LOVE ERROR: " .. tostring(msg) .. "\n")
 		logFile:write("[ERROR HANDLER] STACK TRACE: " .. debug.traceback() .. "\n")
@@ -269,7 +336,7 @@ function love.errhand(msg)
 	if G.F_NO_ERROR_HAND then 
 		print("[ERROR HANDLER] G.F_NO_ERROR_HAND is true, returning")
 		if logFile then
-			local logFile2 = io.open("fs:/vol/external01/simple_debug.log", "a")
+			local logFile2 = io.open("/vol/external01/wiiu/apps/balatro/simple_debug.log", "a")
 			if logFile2 then
 				logFile2:write("[ERROR HANDLER] G.F_NO_ERROR_HAND is true, returning early\n")
 				logFile2:flush()

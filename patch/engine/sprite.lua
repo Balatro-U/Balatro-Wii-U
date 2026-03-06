@@ -140,16 +140,24 @@ function Sprite:draw_shader(_shader, _shadow_height, _send, _no_tilt, other_obj,
         end
     end
 
-    -- Set shader with safety check
+    -- Set shader with safety check (Wii U compatible)
     local shader_to_use = nil
     if G.SHADERS and G.SHADERS[_shader or 'dissolve'] and type(G.SHADERS[_shader or 'dissolve']) == "userdata" then
         shader_to_use = G.SHADERS[_shader or 'dissolve']
     end
     
     if shader_to_use and type(shader_to_use) == "userdata" then
-        love.graphics.setShader(shader_to_use)
+        -- Apply shader and parameters
+        local success = pcall(function()
+            love.graphics.setShader(shader_to_use)
+            if (_send) then shader_to_use:send(_shader,_send) end
+        end)
+        if not success then
+            -- Shader failed, clear it and continue without
+            love.graphics.setShader()
+        end
     else
-        -- Fallback: no shader if not available
+        -- Fallback: no shader if not available (Wii U without CafeGLSL)
         love.graphics.setShader()
     end
 

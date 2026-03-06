@@ -38,7 +38,7 @@ This is an unofficial port of **Balatro** for the Wii U (Aroma) using my [custom
 ---
 
 > [!WARNING]  
-> The game is still in development, see [#2](https://github.com/xtomasnemec/Balatro-Wii-U/issues/2)
+> The game is still in development and it doesn't work properly, see [#2](https://github.com/xtomasnemec/Balatro-Wii-U/issues/2)
 
 
 ## Features

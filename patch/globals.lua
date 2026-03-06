@@ -62,12 +62,12 @@ function Game:set_globals()
         self.F_NO_ERROR_HAND = false
         self.F_QUIT_BUTTON = false
         self.F_SKIP_TUTORIAL = false
-        self.F_ENABLE_PERF_OVERLAY = false
+        self.F_ENABLE_PERF_OVERLAY = true
         self.F_NO_SAVING = false
         self.F_MUTE = false
         self.F_SOUND_THREAD = true
         self.F_SWAP_AB_PIPS = true
-        self.F_SWAP_AB_BUTTONS = false
+        self.F_SWAP_AB_BUTTONS = true
         self.F_SWAP_XY_BUTTONS = true
         self.F_VIDEO_SETTINGS = false
         self.F_RUMBLE = nil
@@ -80,7 +80,7 @@ function Game:set_globals()
         self.F_HTTP_SCORES = false
         self.F_CRASH_REPORTS = false
         self.F_EXTERNAL_LINKS = false
-        self.F_HIDE_BG = true
+        self.F_HIDE_BG = false
     end
 
     if love.system.getOS() == 'ps4' or love.system.getOS() == 'ps5' then  --PLAYSTATION this is for console stuff, modify as needed
